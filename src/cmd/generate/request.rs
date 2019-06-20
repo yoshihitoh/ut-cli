@@ -1,23 +1,23 @@
 use std::convert::TryFrom;
 use std::str::FromStr;
 
-use chrono::{Date, DateTime, Local, LocalResult, NaiveTime, TimeZone, Utc};
+use chrono::{Date, DateTime, Local, NaiveTime, TimeZone, Utc};
 use clap::{ArgMatches, Values};
-use failure::{Fail, ResultExt};
+use failure::ResultExt;
 
+use crate::argv::{HmsArgv, ParseArgv, PrecisionArgv, PresetArgv, TimeUnitArgv, YmdArgv};
 use crate::delta::DeltaItem;
 use crate::error::{UtError, UtErrorKind};
 use crate::precision::Precision;
-use crate::preset::{DateFixture, LocalDateFixture, Preset, UtcDateFixture};
-use crate::unit::TimeUnit;
+use crate::preset::{DateFixture, LocalDateFixture, UtcDateFixture};
 
-pub struct Request<Tz: TimeZone> {
+pub struct OldRequest<Tz: TimeZone> {
     base: DateTime<Tz>,
     deltas: Vec<DeltaItem>,
     precision: Precision,
 }
 
-impl<Tz: TimeZone> Request<Tz> {
+impl<Tz: TimeZone> OldRequest<Tz> {
     pub fn base(&self) -> DateTime<Tz> {
         self.base.clone()
     }
@@ -31,23 +31,23 @@ impl<Tz: TimeZone> Request<Tz> {
     }
 }
 
-impl TryFrom<&ArgMatches<'static>> for Request<Utc> {
+impl TryFrom<&ArgMatches<'static>> for OldRequest<Utc> {
     type Error = UtError;
 
     fn try_from(m: &ArgMatches) -> Result<Self, Self::Error> {
-        parse(m, UtcDateFixture {})
+        parse_request(m, UtcDateFixture {})
     }
 }
 
-impl TryFrom<&ArgMatches<'static>> for Request<Local> {
+impl TryFrom<&ArgMatches<'static>> for OldRequest<Local> {
     type Error = UtError;
 
     fn try_from(m: &ArgMatches) -> Result<Self, Self::Error> {
-        parse(m, LocalDateFixture {})
+        parse_request(m, LocalDateFixture {})
     }
 }
 
-fn parse<Tz, F>(m: &ArgMatches, fixture: F) -> Result<Request<Tz>, UtError>
+fn parse_request<Tz, F>(m: &ArgMatches, fixture: F) -> Result<OldRequest<Tz>, UtError>
 where
     Tz: TimeZone,
     F: DateFixture<Tz>,
@@ -60,38 +60,18 @@ where
         m.value_of("TRUNCATE"),
     )?;
     let deltas = parse_deltas(m.values_of("DELTA"))?;
-    let precision = parse_precision(m.value_of("PRECISION"))?;
 
-    Ok(Request {
+    let precision_argv = PrecisionArgv::default();
+    let precision = m
+        .value_of("PRECISION")
+        .map(|s| precision_argv.parse_argv(s))
+        .unwrap_or(Ok(Precision::Second))?;
+
+    Ok(OldRequest {
         base,
         deltas,
         precision,
     })
-}
-
-fn extract_int(s: &str, start: usize, stop: usize) -> i32 {
-    *&s[start..stop].parse().expect("not a number")
-}
-
-fn parse_ymd<Tz: TimeZone>(tz: Tz, ymd: &str) -> Result<Date<Tz>, UtError> {
-    let year_len = ymd.len() - 4;
-    let y = extract_int(ymd, 0, year_len);
-    let m = extract_int(ymd, year_len, year_len + 2);
-    let d = extract_int(ymd, year_len + 2, year_len + 4);
-
-    match tz.ymd_opt(y, m as u32, d as u32) {
-        LocalResult::Single(date) => Ok(date),
-        LocalResult::None => Err(UtError::from(UtErrorKind::WrongDate)),
-        LocalResult::Ambiguous(_, _) => Err(UtError::from(UtErrorKind::AmbiguousDate)),
-    }
-}
-
-fn parse_hms(hms: &str) -> NaiveTime {
-    let h = *&hms[0..2].parse::<u32>().expect("not a number");
-    let m = *&hms[2..4].parse::<u32>().expect("not a number");
-    let s = *&hms[4..6].parse::<u32>().expect("not a number");
-
-    NaiveTime::from_hms(h, m, s)
 }
 
 fn parse_base<F, Tz>(
@@ -108,36 +88,31 @@ where
     let now = fixture.now();
 
     // date (preset => ymd)
+    let ymd_argv = YmdArgv::from(fixture.timezone());
+    let preset_argv = PresetArgv::default();
     let maybe_date = maybe_base
-        .map(|s| {
-            Preset::find_by_name(s)
-                .map(|p| p.as_date(&fixture))
-                .context(UtErrorKind::PresetError)
-                .map_err(UtError::from)
-        })
-        .or_else(|| maybe_ymd.map(|ymd| parse_ymd(fixture.timezone(), ymd)));
+        .map(|s| preset_argv.parse_argv(s))
+        .map(|r| r.map(|p| p.as_date(&fixture)))
+        .or_else(|| maybe_ymd.map(|ymd| ymd_argv.parse_argv(ymd)));
 
     // time (hms)
-    let maybe_time = maybe_hms.map(parse_hms);
+    let hms_argv = HmsArgv::default();
+    let maybe_time = maybe_hms.map(|hms| hms_argv.parse_argv(hms));
 
     // datetime
-    let dt = maybe_date
-        .map(|date| {
-            date.map(|d| {
-                maybe_time
-                    .map(|t| d.and_time(t).expect("not a datetime"))
-                    .unwrap_or(d.and_hms(0, 0, 0))
-            })
-        })
-        .unwrap_or_else(|| {
-            Ok(maybe_time
-                .map(|t| now.date().and_time(t).unwrap())
-                .unwrap_or(now))
-        })?;
+    let has_date = maybe_date.is_some();
+    let d: Date<Tz> = maybe_date.unwrap_or(Ok(now.date()))?;
+    let t: NaiveTime = maybe_time.unwrap_or(Ok(if has_date {
+        NaiveTime::from_hms(0, 0, 0)
+    } else {
+        now.time()
+    }))?;
+    let dt = d.and_time(t).unwrap();
 
     // truncate
     Ok(if let Some(truncate) = maybe_truncate {
-        let truncate_unit = TimeUnit::find_by_name(truncate).context(UtErrorKind::TimeUnitError)?;
+        let timeunit_argv = TimeUnitArgv::default();
+        let truncate_unit = timeunit_argv.parse_argv(truncate)?;
         truncate_unit.truncate(dt)
     } else {
         dt
@@ -145,25 +120,13 @@ where
 }
 
 fn parse_deltas(maybe_values: Option<Values>) -> Result<Vec<DeltaItem>, UtError> {
-    maybe_values
-        .map(|values| {
-            values
-                .map(|v| {
-                    DeltaItem::from_str(v)
-                        .context(UtErrorKind::DeltaError)
-                        .map_err(UtError::from)
-                })
-                .collect()
-        })
-        .unwrap_or(Ok(Vec::new()))
-}
+    fn parse(s: &str) -> Result<DeltaItem, UtError> {
+        DeltaItem::from_str(s)
+            .context(UtErrorKind::DeltaError)
+            .map_err(UtError::from)
+    }
 
-fn parse_precision(maybe_precision: Option<&str>) -> Result<Precision, UtError> {
-    maybe_precision
-        .map(|p| {
-            Precision::find_by_name(p)
-                .map_err(|e| e.context(UtErrorKind::PrecisionError))
-                .map_err(UtError::from)
-        })
-        .unwrap_or(Ok(Precision::Second))
+    maybe_values
+        .map(|values| values.map(parse).collect())
+        .unwrap_or(Ok(Vec::new()))
 }

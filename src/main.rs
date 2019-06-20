@@ -1,3 +1,4 @@
+mod argv;
 mod cmd;
 mod delta;
 mod error;
