@@ -69,6 +69,12 @@ pub trait DateFixture<Tz: TimeZone> {
 
 pub struct UtcDateFixture {}
 
+impl Default for UtcDateFixture {
+    fn default() -> Self {
+        UtcDateFixture {}
+    }
+}
+
 impl DateFixture<Utc> for UtcDateFixture {
     fn timezone(&self) -> Utc {
         Utc
@@ -84,6 +90,12 @@ impl DateFixture<Utc> for UtcDateFixture {
 }
 
 pub struct LocalDateFixture {}
+
+impl Default for LocalDateFixture {
+    fn default() -> Self {
+        LocalDateFixture {}
+    }
+}
 
 impl DateFixture<Local> for LocalDateFixture {
     fn timezone(&self) -> Local {
