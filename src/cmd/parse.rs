@@ -1,5 +1,5 @@
 use chrono::Local;
-use clap::{App, Arg, ArgMatches, SubCommand};
+use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use failure::Fail;
 use regex::Regex;
 
@@ -9,10 +9,12 @@ use crate::precision::Precision;
 pub fn command(name: &str) -> App<'static, 'static> {
     SubCommand::with_name(name)
         .about("Parse a unix timestamp and print it in human readable format.")
+        .settings(&[AppSettings::AllowLeadingHyphen])
         .arg(
             Arg::with_name("TIMESTAMP")
                 .required(true)
-                .validator(is_timestamp),
+                .validator(is_timestamp)
+                .allow_hyphen_values(true),
         )
         .arg(
             // TODO: add validator
