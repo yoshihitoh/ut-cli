@@ -21,18 +21,3 @@ pub trait ParseArgv<T> {
 pub trait ValidateArgv {
     fn validate_argv(s: String) -> Result<(), String>;
 }
-
-fn validate_number(field_name: &str, min: i32, max: i32, text: &str) -> Result<(), String> {
-    let number = text
-        .parse::<i32>()
-        .map_err(|_| format!("{} is not a number.", text))?;
-
-    if number >= min && number <= max {
-        Ok(())
-    } else {
-        Err(format!(
-            "{} must be between {} and {} . given {}: {}",
-            field_name, min, max, field_name, text
-        ))
-    }
-}

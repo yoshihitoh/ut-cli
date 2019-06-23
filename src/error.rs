@@ -18,6 +18,9 @@ pub enum UtErrorKind {
     #[fail(display = "Wrong date.")]
     WrongDate,
 
+    #[fail(display = "Wrong time.")]
+    WrongTime,
+
     #[fail(display = "Date is ambiguous.")]
     AmbiguousDate,
 }
@@ -33,11 +36,11 @@ impl Fail for UtError {
     }
 
     fn cause(&self) -> Option<&Fail> {
-        unimplemented!()
+        self.inner.cause()
     }
 
     fn backtrace(&self) -> Option<&Backtrace> {
-        unimplemented!()
+        self.inner.backtrace()
     }
 }
 
