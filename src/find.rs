@@ -6,14 +6,11 @@ use strum::IntoEnumIterator;
 
 #[derive(Fail, Debug, PartialEq)]
 pub enum FindError {
-    #[fail(display = "No matching item found. given: {}", _0)]
-    NotFound(String),
+    #[fail(display = "No matching item found.")]
+    NotFound,
 
-    #[fail(
-        display = "Multiple candidates found. given: {}, candidates: {:?}",
-        _0, _1
-    )]
-    Ambiguous(String, Vec<String>),
+    #[fail(display = "Ambiguous item given. candidates: {:?}", _0)]
+    Ambiguous(Vec<String>),
 }
 
 pub fn find_items<E, I>(items: I, name: &str) -> Vec<E>
@@ -34,10 +31,10 @@ where
         if items.len() == 1 {
             Ok(*items.first().unwrap())
         } else if items.is_empty() {
-            Err(FindError::NotFound(name.to_string()))
+            Err(FindError::NotFound)
         } else {
             let names = items.into_iter().map(|x| x.to_string()).collect();
-            Err(FindError::Ambiguous(name.to_string(), names))
+            Err(FindError::Ambiguous(names))
         }
     })
 }

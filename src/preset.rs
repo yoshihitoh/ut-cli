@@ -30,6 +30,10 @@ impl Preset {
         find_enum_item(&name.to_ascii_lowercase())
     }
 
+    pub fn possible_names() -> Vec<String> {
+        Preset::iter().map(|p| p.to_string()).collect()
+    }
+
     pub fn as_date<F, Tz>(&self, fixture: &F) -> Date<Tz>
     where
         F: DateFixture<Tz>,

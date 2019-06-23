@@ -25,6 +25,10 @@ impl Precision {
         find_enum_item(&name.to_ascii_lowercase())
     }
 
+    pub fn possible_names() -> Vec<String> {
+        Precision::iter().map(|p| p.to_string()).collect()
+    }
+
     pub fn parse_timestamp<Tz: TimeZone>(&self, tz: Tz, timestamp: i64) -> DateTime<Tz> {
         match *self {
             Precision::Second => tz.timestamp(timestamp, 0),
@@ -73,14 +77,8 @@ mod tests {
 
     #[test]
     fn find_by_name_not_supported() {
-        assert_eq!(
-            Precision::find_by_name("year"),
-            Err(FindError::NotFound("year".to_string()))
-        );
-        assert_eq!(
-            Precision::find_by_name("min"),
-            Err(FindError::NotFound("min".to_string()))
-        );
+        assert_eq!(Precision::find_by_name("year"), Err(FindError::NotFound));
+        assert_eq!(Precision::find_by_name("min"), Err(FindError::NotFound));
     }
 
     #[test]

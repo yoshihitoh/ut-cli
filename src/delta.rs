@@ -111,9 +111,7 @@ mod tests {
 
         assert_eq!(
             DeltaItem::from_str("31b"),
-            Err(DeltaItemError::TimeUnitFindError(FindError::NotFound(
-                "b".to_string()
-            )))
+            Err(DeltaItemError::TimeUnitFindError(FindError::NotFound))
         );
     }
 }
