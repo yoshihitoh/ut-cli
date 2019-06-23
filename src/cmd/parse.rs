@@ -12,6 +12,7 @@ pub fn command(name: &str) -> App<'static, 'static> {
         .settings(&[AppSettings::AllowLeadingHyphen])
         .arg(
             Arg::with_name("TIMESTAMP")
+                .help("Set a timestamp to parse.")
                 .required(true)
                 .validator(is_timestamp)
                 .allow_hyphen_values(true),
@@ -19,8 +20,9 @@ pub fn command(name: &str) -> App<'static, 'static> {
         .arg(
             // TODO: add validator
             Arg::with_name("PRECISION")
+                .help("Set a precision of the timestamp.")
                 .short("p")
-                .long_help("precision")
+                .long("precision")
                 .takes_value(true)
                 .default_value("second"),
         )
