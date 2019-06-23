@@ -18,6 +18,9 @@ pub enum UtErrorKind {
     #[fail(display = "Wrong date.")]
     WrongDate,
 
+    #[fail(display = "Wrong time.")]
+    WrongTime,
+
     #[fail(display = "Date is ambiguous.")]
     AmbiguousDate,
 }
