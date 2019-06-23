@@ -40,6 +40,10 @@ impl TimeUnit {
         find_enum_item(&name.to_ascii_lowercase())
     }
 
+    pub fn possible_names() -> Vec<String> {
+        TimeUnit::iter().map(|t| t.to_string()).collect()
+    }
+
     pub fn truncate<Tz: TimeZone>(&self, dt: DateTime<Tz>) -> DateTime<Tz> {
         let d = match *self {
             TimeUnit::Year => dt.date().with_month(1).unwrap().with_day(1).unwrap(),
@@ -81,14 +85,11 @@ mod find_tests {
 
         assert_eq!(
             TimeUnit::find_by_name("m"),
-            Err(FindError::Ambiguous(
-                "m".to_string(),
-                vec![
-                    "month".to_string(),
-                    "minute".to_string(),
-                    "millisecond".to_string()
-                ]
-            ))
+            Err(FindError::Ambiguous(vec![
+                "month".to_string(),
+                "minute".to_string(),
+                "millisecond".to_string()
+            ]))
         );
     }
 
@@ -111,10 +112,10 @@ mod find_tests {
 
         assert_eq!(
             TimeUnit::find_by_name("mi"),
-            Err(FindError::Ambiguous(
-                "mi".to_string(),
-                vec!["minute".to_string(), "millisecond".to_string()]
-            ))
+            Err(FindError::Ambiguous(vec![
+                "minute".to_string(),
+                "millisecond".to_string()
+            ]))
         );
     }
 
@@ -136,10 +137,7 @@ mod find_tests {
 
     #[test]
     fn find_by_name_not_supported() {
-        assert_eq!(
-            TimeUnit::find_by_name("b"),
-            Err(FindError::NotFound("b".to_string()))
-        );
+        assert_eq!(TimeUnit::find_by_name("b"), Err(FindError::NotFound));
     }
 }
 

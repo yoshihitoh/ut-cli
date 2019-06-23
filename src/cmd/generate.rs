@@ -23,6 +23,7 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .short("b")
                 .long("base")
                 .takes_value(true)
+                .validator(PresetArgv::validate_argv)
                 .conflicts_with("YMD"),
         )
         .arg(
@@ -49,7 +50,8 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .next_line_help(true)
                 .short("t")
                 .long("truncate")
-                .takes_value(true),
+                .takes_value(true)
+                .validator(TimeUnitArgv::validate_argv),
         )
         .arg(
             Arg::with_name("DELTA")
@@ -68,7 +70,8 @@ Example:
                 .takes_value(true)
                 .allow_hyphen_values(true)
                 .multiple(true)
-                .number_of_values(1),
+                .number_of_values(1)
+                .validator(DeltaArgv::validate_argv),
         )
         .arg(
             Arg::with_name("PRECISION")
@@ -77,7 +80,8 @@ Example:
                 .short("p")
                 .long("precision")
                 .takes_value(true)
-                .default_value("second"),
+                .default_value("second")
+                .validator(PrecisionArgv::validate_argv),
         )
         .arg(
             Arg::with_name("UTC")
