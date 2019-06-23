@@ -33,11 +33,11 @@ impl Fail for UtError {
     }
 
     fn cause(&self) -> Option<&Fail> {
-        unimplemented!()
+        self.inner.cause()
     }
 
     fn backtrace(&self) -> Option<&Backtrace> {
-        unimplemented!()
+        self.inner.backtrace()
     }
 }
 
