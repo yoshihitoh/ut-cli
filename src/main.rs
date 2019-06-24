@@ -27,6 +27,7 @@ fn app() -> App<'static, 'static> {
         .settings(&[
             AppSettings::SubcommandRequiredElseHelp,
             AppSettings::AllowNegativeNumbers,
+            AppSettings::ColoredHelp,
         ])
         .subcommand(cmd::generate::command("generate").alias("g"))
         .subcommand(cmd::parse::command("parse").alias("p"))
@@ -34,7 +35,8 @@ fn app() -> App<'static, 'static> {
             Arg::with_name("UTC")
                 .help("Use utc timezone.")
                 .short("u")
-                .long("utc"),
+                .long("utc")
+                .conflicts_with_all(&["OFFSET"]),
         )
         .arg(
             Arg::with_name("OFFSET")
