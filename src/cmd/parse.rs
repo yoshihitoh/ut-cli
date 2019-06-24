@@ -28,7 +28,7 @@ pub fn command(name: &str) -> App<'static, 'static> {
         )
 }
 
-pub fn run(m: &ArgMatches<'static>) -> Result<(), UtError> {
+pub fn run(m: &ArgMatches) -> Result<(), UtError> {
     let timestamp = m
         .value_of("TIMESTAMP")
         .unwrap()

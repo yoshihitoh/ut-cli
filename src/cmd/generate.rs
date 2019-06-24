@@ -91,14 +91,14 @@ Example:
         )
 }
 
-pub fn run(m: &ArgMatches<'static>) -> Result<(), UtError> {
+pub fn run(m: &ArgMatches) -> Result<(), UtError> {
     match m.is_present("UTC") {
         true => run_with(m, UtcDateFixture::default()),
         false => run_with(m, LocalDateFixture::default()),
     }
 }
 
-pub fn run_with<Tz, F>(m: &ArgMatches<'static>, fixture: F) -> Result<(), UtError>
+pub fn run_with<Tz, F>(m: &ArgMatches, fixture: F) -> Result<(), UtError>
 where
     Tz: TimeZone,
     F: DateFixture<Tz>,
