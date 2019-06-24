@@ -3,6 +3,8 @@ ut
 
 ut is a command line tool to handle a unix timestamp.
 
+[![Build Status](https://travis-ci.com/yoshihitoh/ut.svg?branch=master)](https://travis-ci.com/yoshihitoh/ut)
+
 ### Installation
 
 clone the repository and build it.
