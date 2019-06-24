@@ -9,7 +9,7 @@ use crate::argv::{
 use crate::delta::DeltaItem;
 use crate::error::{UtError, UtErrorKind};
 use crate::precision::Precision;
-use crate::preset::{DateFixture, LocalDateFixture, Preset, UtcDateFixture};
+use crate::preset::{DateFixture, Preset};
 use crate::unit::TimeUnit;
 
 pub fn command(name: &str) -> App<'static, 'static> {
@@ -83,22 +83,9 @@ Example:
                 .default_value("second")
                 .validator(PrecisionArgv::validate_argv),
         )
-        .arg(
-            Arg::with_name("UTC")
-                .help("Use utc date and time on given options relate to date and time.")
-                .short("u")
-                .long("utc"),
-        )
 }
 
-pub fn run(m: &ArgMatches) -> Result<(), UtError> {
-    match m.is_present("UTC") {
-        true => run_with(m, UtcDateFixture::default()),
-        false => run_with(m, LocalDateFixture::default()),
-    }
-}
-
-pub fn run_with<Tz, F>(m: &ArgMatches, fixture: F) -> Result<(), UtError>
+pub fn run<Tz, F>(m: &ArgMatches, fixture: F) -> Result<(), UtError>
 where
     Tz: TimeZone,
     F: DateFixture<Tz>,

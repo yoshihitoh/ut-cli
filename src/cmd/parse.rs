@@ -1,10 +1,12 @@
-use chrono::Local;
+use chrono::{Offset, TimeZone};
 use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
 use failure::Fail;
 use regex::Regex;
 
 use crate::error::{UtError, UtErrorKind};
 use crate::precision::Precision;
+use crate::preset::DateFixture;
+use std::fmt::Display;
 
 pub fn command(name: &str) -> App<'static, 'static> {
     SubCommand::with_name(name)
@@ -28,7 +30,12 @@ pub fn command(name: &str) -> App<'static, 'static> {
         )
 }
 
-pub fn run(m: &ArgMatches) -> Result<(), UtError> {
+pub fn run<O, Tz, F>(m: &ArgMatches, fixture: F) -> Result<(), UtError>
+where
+    O: Offset + Display + Sized,
+    Tz: TimeZone<Offset = O>,
+    F: DateFixture<Tz>,
+{
     let timestamp = m
         .value_of("TIMESTAMP")
         .unwrap()
@@ -39,7 +46,7 @@ pub fn run(m: &ArgMatches) -> Result<(), UtError> {
         .map_err(|e| e.context(UtErrorKind::PrecisionError))
         .map_err(UtError::from)?;
 
-    let dt = precision.parse_timestamp(Local, timestamp);
+    let dt = precision.parse_timestamp(fixture.timezone(), timestamp);
     println!("{}", dt.format(precision.preferred_format()).to_string());
     Ok(())
 }
