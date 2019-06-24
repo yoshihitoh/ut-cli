@@ -2,6 +2,7 @@ use crate::error::UtError;
 
 mod delta;
 mod hms;
+mod offset;
 mod precision;
 mod preset;
 mod unit;
@@ -9,6 +10,7 @@ mod ymd;
 
 pub use delta::DeltaArgv;
 pub use hms::HmsArgv;
+pub use offset::OffsetArgv;
 pub use precision::PrecisionArgv;
 pub use preset::PresetArgv;
 pub use unit::TimeUnitArgv;

@@ -14,7 +14,8 @@ use clap::{
     crate_authors, crate_description, crate_name, crate_version, App, AppSettings, Arg, ArgMatches,
 };
 
-use argv::{ParseArgv, ValidateArgv};
+use crate::preset::FixedOffsetDateFixture;
+use argv::{OffsetArgv, ParseArgv, ValidateArgv};
 use error::UtError;
 use preset::{DateFixture, LocalDateFixture, UtcDateFixture};
 
@@ -35,6 +36,15 @@ fn app() -> App<'static, 'static> {
                 .short("u")
                 .long("utc"),
         )
+        .arg(
+            Arg::with_name("OFFSET")
+                .help("Use given value as timezone offset.")
+                .short("o")
+                .long("offset")
+                .takes_value(true)
+                .allow_hyphen_values(true)
+                .validator(OffsetArgv::validate_argv),
+        )
 }
 
 fn run() -> Result<(), UtError> {
@@ -43,6 +53,9 @@ fn run() -> Result<(), UtError> {
 
     if main_matches.is_present("UTC") {
         run_with(&main_matches, UtcDateFixture::default())
+    } else if let Some(offset_name) = main_matches.value_of("OFFSET") {
+        let offset = OffsetArgv::default().parse_argv(offset_name)?;
+        run_with(&main_matches, FixedOffsetDateFixture::from(offset))
     } else {
         run_with(&main_matches, LocalDateFixture::default())
     }

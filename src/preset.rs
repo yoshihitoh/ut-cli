@@ -1,4 +1,4 @@
-use chrono::{Date, DateTime, Local, TimeZone, Utc};
+use chrono::{Date, DateTime, FixedOffset, Local, TimeZone, Utc};
 use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
@@ -112,5 +112,29 @@ impl DateFixture<Local> for LocalDateFixture {
 
     fn today(&self) -> Date<Local> {
         Local::today()
+    }
+}
+
+pub struct FixedOffsetDateFixture {
+    offset: FixedOffset,
+}
+
+impl From<FixedOffset> for FixedOffsetDateFixture {
+    fn from(offset: FixedOffset) -> Self {
+        FixedOffsetDateFixture { offset }
+    }
+}
+
+impl DateFixture<FixedOffset> for FixedOffsetDateFixture {
+    fn timezone(&self) -> FixedOffset {
+        self.offset
+    }
+
+    fn now(&self) -> DateTime<FixedOffset> {
+        self.offset.from_utc_datetime(&Utc::now().naive_utc())
+    }
+
+    fn today(&self) -> Date<FixedOffset> {
+        self.now().date()
     }
 }
