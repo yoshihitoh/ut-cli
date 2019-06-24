@@ -4,6 +4,7 @@ ut
 ut is a command line tool to handle a unix timestamp.
 
 [![Build Status](https://travis-ci.com/yoshihitoh/ut.svg?branch=master)](https://travis-ci.com/yoshihitoh/ut)
+![Dependabot](https://api.dependabot.com/badges/status?host=github&repo=yoshihitoh/ut)
 
 ### Installation
 
@@ -14,7 +15,7 @@ $ git clone https://github.com/yoshihitoh/ut
 $ cd ut
 $ cargo build --release
 $ ./target/relase ut --version
-ut 0.1.0
+ut 0.1.2
 ```
 
 ### Usage
