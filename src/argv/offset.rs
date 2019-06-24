@@ -66,7 +66,7 @@ impl FromStr for Offset {
     type Err = OffsetError;
 
     fn from_str(text: &str) -> Result<Self, Self::Err> {
-        let re = Regex::new(r"^([-+])?(?:(\d{2})(\d{2})|(\d{1,2})(?:[:]?(\d{1,2}))?)$")
+        let re = Regex::new(r"^([-+])?(?:(\d{2})(\d{2})|(\d{1,2})(?:[:](\d{1,2}))?)$")
             .expect("wrong regex pattern");
 
         re.captures(text)
@@ -100,5 +100,71 @@ fn validate_number<T: PartialOrd, E, F: Fn() -> E>(n: T, min: T, max: T, f: F) -
         Ok(())
     } else {
         Err(f())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::argv::{OffsetArgv, ParseArgv, ValidateArgv};
+    use chrono::FixedOffset;
+
+    #[test]
+    fn parse() {
+        let argv = OffsetArgv::default();
+        assert_eq!(argv.parse_argv("0").ok(), Some(FixedOffset::east(0)));
+        assert_eq!(argv.parse_argv("9").ok(), Some(FixedOffset::east(9 * 3600)));
+        assert_eq!(
+            argv.parse_argv("-10").ok(),
+            Some(FixedOffset::east(-10 * 3600))
+        );
+
+        assert_eq!(argv.parse_argv("00:00").ok(), Some(FixedOffset::east(0)));
+
+        assert_eq!(
+            argv.parse_argv("+0900").ok(),
+            Some(FixedOffset::east(9 * 3600))
+        );
+        assert_eq!(
+            argv.parse_argv("-1000").ok(),
+            Some(FixedOffset::east(-10 * 3600))
+        );
+
+        assert_eq!(
+            argv.parse_argv("+5:45").ok(),
+            Some(FixedOffset::east(5 * 3600 + 45 * 60))
+        );
+        assert_eq!(
+            argv.parse_argv("+9:00").ok(),
+            Some(FixedOffset::east(9 * 3600))
+        );
+        assert_eq!(
+            argv.parse_argv("-10:00").ok(),
+            Some(FixedOffset::east(-10 * 3600))
+        );
+    }
+
+    #[test]
+    fn validate() {
+        let validate_argv = |s: &str| OffsetArgv::validate_argv(s.to_string());
+
+        assert!(validate_argv("0000").is_ok());
+        assert!(validate_argv("00:00").is_ok());
+        assert!(validate_argv("0:0").is_ok());
+        assert!(validate_argv("0").is_ok());
+
+        assert!(validate_argv("+0900").is_ok());
+        assert!(validate_argv("+09:00").is_ok());
+        assert!(validate_argv("+9:0").is_ok());
+        assert!(validate_argv("+9").is_ok());
+
+        assert!(validate_argv("+05:45").is_ok());
+        assert!(validate_argv("-10:00").is_ok());
+
+        assert!(validate_argv("").is_err());
+        assert!(validate_argv("100").is_err());
+        assert!(validate_argv("10300").is_err());
+        assert!(validate_argv(":").is_err());
+        assert!(validate_argv("24").is_err());
+        assert!(validate_argv("23:60").is_err());
     }
 }
