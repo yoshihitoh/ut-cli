@@ -35,7 +35,8 @@ fn app() -> App<'static, 'static> {
             Arg::with_name("UTC")
                 .help("Use utc timezone.")
                 .short("u")
-                .long("utc"),
+                .long("utc")
+                .conflicts_with_all(&["OFFSET"]),
         )
         .arg(
             Arg::with_name("OFFSET")
