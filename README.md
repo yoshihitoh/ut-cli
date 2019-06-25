@@ -3,16 +3,16 @@ ut
 
 ut is a command line tool to handle a unix timestamp.
 
-[![Build Status](https://travis-ci.com/yoshihitoh/ut.svg?branch=master)](https://travis-ci.com/yoshihitoh/ut)
-![Dependabot](https://api.dependabot.com/badges/status?host=github&repo=yoshihitoh/ut)
+[![Build Status](https://travis-ci.com/yoshihitoh/ut-cli.svg?branch=master)](https://travis-ci.com/yoshihitoh/ut-cli)
+![Dependabot](https://api.dependabot.com/badges/status?host=github&repo=yoshihitoh/ut-cli)
 
 ### Installation
 
 clone the repository and build it.
 
 ``` bash
-$ git clone https://github.com/yoshihitoh/ut
-$ cd ut
+$ git clone https://github.com/yoshihitoh/ut-cli
+$ cd ut-cli
 $ cargo build --release
 $ ./target/release/ut --version
 ut 0.1.2
