@@ -1,8 +1,19 @@
 [package]
-name = "ut"
+name = "ut-cli"
 version = "0.1.2"
 authors = ["yoshihitoh <yoshihito.arih@gmail.com>"]
+categories = ["command-line-utilities"]
+description = "A command line tool to handle unix timestamp."
+homepage = "https://github.com/yoshihitoh/ut-cli/"
+repository = "https://github.com/yoshihitoh/ut-cli/"
+readme = "README.md"
+keywords = ["timestamp"]
 edition = "2018"
+license = "MIT"
+
+[[bin]]
+name = "ut"
+path = "src/main.rs"
 
 [workspace]
 members = [
