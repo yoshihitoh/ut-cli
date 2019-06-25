@@ -14,7 +14,7 @@ clone the repository and build it.
 $ git clone https://github.com/yoshihitoh/ut
 $ cd ut
 $ cargo build --release
-$ ./target/relase ut --version
+$ ./target/release/ut --version
 ut 0.1.2
 ```
 
