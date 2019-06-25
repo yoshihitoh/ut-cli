@@ -1,5 +1,5 @@
 mod delta;
 
-pub use delta::ApplyDateTime;
-pub use delta::TimeDelta;
-pub use delta::TimeDeltaBuilder;
+pub use self::delta::ApplyDateTime;
+pub use self::delta::TimeDelta;
+pub use self::delta::TimeDeltaBuilder;
