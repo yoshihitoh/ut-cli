@@ -14,7 +14,7 @@ clone the repository and build it.
 $ git clone https://github.com/yoshihitoh/ut
 $ cd ut
 $ cargo build --release
-$ ./target/relase ut --version
+$ ./target/release/ut --version
 ut 0.1.2
 ```
 
@@ -84,7 +84,7 @@ $ ut p -p ms $(ut g -b today -p ms -d 11h -d 22min -d 33s -d 444ms)
 #### Change timezone
 
 ##### Local timezone
-If you don't set timezone options, use local timezone.
+If you don't set timezone options, ut command uses local timezone.
 
 In Japan(UTC+9):
 ``` bash
@@ -101,7 +101,7 @@ $ ut --utc p 1561302000
 2019-06-23 15:00:00 (UTC)
 ```
 
-You can use fixed timezone on any environment.
+You can use fixed offset timezone on any environment.
 ``` bash
 # Generate PST timestamp
 $ ut -o -8 g --ymd 2019-06-24
