@@ -8,19 +8,27 @@ ut is a command line tool to handle a unix timestamp.
 
 ### Installation
 
-clone the repository and build it.
+If you have rust toolchain, ut-cli can be installed with cargo.
+``` bash
+$ cargo install ut-cli
+```
+
+or clone the repository and build it.
 
 ``` bash
 $ git clone https://github.com/yoshihitoh/ut-cli
 $ cd ut-cli
 $ cargo build --release
 $ ./target/release/ut --version
-ut 0.1.2
+ut 0.1.3
 ```
+
+Also there are pre-built binary for Linux and macOS.
+See [releases](https://github.com/yoshihitoh/ut-cli/releases).
 
 ### Usage
 ``` bash
-ut 0.1.2
+ut 0.1.3
 yoshihitoh <yoshihito.arih@gmail.com>
 
 
