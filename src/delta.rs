@@ -2,9 +2,9 @@ use std::str::FromStr;
 
 use failure::Fail;
 use regex::Regex;
-use timedelta::TimeDeltaBuilder;
 
 use crate::find::FindError;
+use crate::timedelta::TimeDeltaBuilder;
 use crate::unit::TimeUnit;
 
 #[derive(Fail, Debug, PartialEq)]

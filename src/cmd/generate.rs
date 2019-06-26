@@ -1,8 +1,6 @@
 use chrono::{Date, DateTime, NaiveTime, TimeZone, Utc};
 use clap::{App, Arg, ArgMatches, SubCommand, Values};
 
-use timedelta::{ApplyDateTime, TimeDeltaBuilder};
-
 use crate::argv::{
     DeltaArgv, HmsArgv, ParseArgv, PrecisionArgv, PresetArgv, TimeUnitArgv, ValidateArgv, YmdArgv,
 };
@@ -10,6 +8,7 @@ use crate::delta::DeltaItem;
 use crate::error::{UtError, UtErrorKind};
 use crate::precision::Precision;
 use crate::preset::{DateFixture, Preset};
+use crate::timedelta::{ApplyDateTime, TimeDeltaBuilder};
 use crate::unit::TimeUnit;
 
 pub fn command(name: &str) -> App<'static, 'static> {

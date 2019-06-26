@@ -3,9 +3,8 @@ use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 
-use timedelta::{ApplyDateTime, TimeDeltaBuilder};
-
 use crate::find::{enum_names, find_enum_item, FindError};
+use crate::timedelta::{ApplyDateTime, TimeDeltaBuilder};
 
 #[derive(Debug, Copy, Clone, PartialEq, EnumIter, EnumString, Display)]
 pub enum Preset {

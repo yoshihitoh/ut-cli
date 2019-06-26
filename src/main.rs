@@ -5,6 +5,7 @@ mod error;
 mod find;
 mod precision;
 mod preset;
+mod timedelta;
 mod unit;
 
 use std::fmt::Display;
@@ -14,9 +15,9 @@ use clap::{
     crate_authors, crate_description, crate_name, crate_version, App, AppSettings, Arg, ArgMatches,
 };
 
-use crate::preset::FixedOffsetDateFixture;
 use crate::argv::{OffsetArgv, ParseArgv, ValidateArgv};
 use crate::error::UtError;
+use crate::preset::FixedOffsetDateFixture;
 use crate::preset::{DateFixture, LocalDateFixture, UtcDateFixture};
 
 fn app() -> App<'static, 'static> {
