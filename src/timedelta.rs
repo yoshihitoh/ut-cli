@@ -11,6 +11,7 @@ pub struct TimeDelta {
 }
 
 impl TimeDelta {
+    #[allow(dead_code)]
     pub fn new(
         years: i32,
         months: i32,
@@ -207,6 +208,7 @@ impl TimeDeltaBuilder {
         self.seconds(s)
     }
 
+    #[allow(dead_code)]
     pub fn milliseconds(self, value: i32) -> Self {
         let s = value / 1000;
         let us = (value % 1000) * 1000;
@@ -248,6 +250,7 @@ struct DeltaValues {
     microseconds: i32,
 }
 
+#[allow(dead_code)]
 fn sign_of(x: i32) -> i32 {
     if x > 0 {
         1
@@ -256,16 +259,17 @@ fn sign_of(x: i32) -> i32 {
     }
 }
 
+#[allow(dead_code)]
 fn div_mod(x: i32, y: i32) -> (i32, i32) {
     (x / y, x % y)
 }
 
 #[cfg(test)]
 mod time_delta_tests {
-    use crate::delta::{ApplyDateTime, TimeDelta};
-    use crate::TimeDeltaBuilder;
     use chrono::offset::TimeZone;
     use chrono::Utc;
+
+    use super::{ApplyDateTime, TimeDelta, TimeDeltaBuilder};
 
     #[test]
     fn time_delta_new_basics() {

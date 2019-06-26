@@ -15,17 +15,12 @@ license = "MIT"
 name = "ut"
 path = "src/main.rs"
 
-[workspace]
-members = [
-    "timedelta",
-]
-
 [dependencies]
 chrono = "^0.4"
 clap = "^2.33"
 failure = "^0.1"
+lazy_static = "^1.3"
 regex = "^1"
 strum = "^0.15"
 strum_macros = "^0.15"
-timedelta = {version = "^0.1.0", "path" = "timedelta"}
-lazy_static = "^1.3"
+time = "^0.1"
