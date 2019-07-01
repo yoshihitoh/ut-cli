@@ -5,7 +5,7 @@ use regex::Regex;
 
 use crate::error::{UtError, UtErrorKind};
 use crate::precision::Precision;
-use crate::preset::DateFixture;
+use crate::provider::DateTimeProvider;
 use std::fmt::Display;
 
 pub fn command(name: &str) -> App<'static, 'static> {
@@ -30,11 +30,11 @@ pub fn command(name: &str) -> App<'static, 'static> {
         )
 }
 
-pub fn run<O, Tz, F>(m: &ArgMatches, fixture: F) -> Result<(), UtError>
+pub fn run<O, Tz, P>(m: &ArgMatches, provider: P) -> Result<(), UtError>
 where
     O: Offset + Display + Sized,
     Tz: TimeZone<Offset = O>,
-    F: DateFixture<Tz>,
+    P: DateTimeProvider<Tz>,
 {
     let timestamp = m
         .value_of("TIMESTAMP")
@@ -46,7 +46,7 @@ where
         .map_err(|e| e.context(UtErrorKind::PrecisionError))
         .map_err(UtError::from)?;
 
-    let dt = precision.parse_timestamp(fixture.timezone(), timestamp);
+    let dt = precision.parse_timestamp(provider.timezone(), timestamp);
     println!("{}", dt.format(precision.preferred_format()).to_string());
     Ok(())
 }

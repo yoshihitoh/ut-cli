@@ -5,20 +5,22 @@ mod error;
 mod find;
 mod precision;
 mod preset;
+mod provider;
 mod timedelta;
 mod unit;
 
 use std::fmt::Display;
 
-use chrono::{Offset, TimeZone};
+use chrono::{Local, Offset, TimeZone, Utc};
 use clap::{
     crate_authors, crate_description, crate_name, crate_version, App, AppSettings, Arg, ArgMatches,
 };
 
 use crate::argv::{OffsetArgv, ParseArgv, ValidateArgv};
 use crate::error::UtError;
-use crate::preset::FixedOffsetDateFixture;
-use crate::preset::{DateFixture, LocalDateFixture, UtcDateFixture};
+use crate::provider::{
+    DateTimeProvider, FixedOffsetProvider, FromTimeZone, LocalProvider, UtcProvider,
+};
 
 fn app() -> App<'static, 'static> {
     App::new(crate_name!())
@@ -55,24 +57,27 @@ fn run() -> Result<(), UtError> {
     let main_matches = app.get_matches();
 
     if main_matches.is_present("UTC") {
-        run_with(&main_matches, UtcDateFixture::default())
+        let provider: UtcProvider = UtcProvider::from_timezone(Utc);
+        run_with(&main_matches, provider)
     } else if let Some(offset_name) = main_matches.value_of("OFFSET") {
         let offset = OffsetArgv::default().parse_argv(offset_name)?;
-        run_with(&main_matches, FixedOffsetDateFixture::from(offset))
+        let provider: FixedOffsetProvider = FixedOffsetProvider::from_timezone(offset);
+        run_with(&main_matches, provider)
     } else {
-        run_with(&main_matches, LocalDateFixture::default())
+        let provider: LocalProvider = LocalProvider::from_timezone(Local);
+        run_with(&main_matches, provider)
     }
 }
 
-fn run_with<O, Tz, F>(main_matches: &ArgMatches, fixture: F) -> Result<(), UtError>
+fn run_with<O, Tz, P>(main_matches: &ArgMatches, provider: P) -> Result<(), UtError>
 where
     O: Offset + Display + Sized,
     Tz: TimeZone<Offset = O>,
-    F: DateFixture<Tz>,
+    P: DateTimeProvider<Tz>,
 {
     match main_matches.subcommand() {
-        ("generate", generate_matches) => cmd::generate::run(generate_matches.unwrap(), fixture),
-        ("parse", parse_matches) => cmd::parse::run(parse_matches.unwrap(), fixture),
+        ("generate", generate_matches) => cmd::generate::run(generate_matches.unwrap(), provider),
+        ("parse", parse_matches) => cmd::parse::run(parse_matches.unwrap(), provider),
         _ => panic!("never happen"),
     }
 }

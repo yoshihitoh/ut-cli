@@ -7,7 +7,8 @@ use crate::argv::{
 use crate::delta::DeltaItem;
 use crate::error::{UtError, UtErrorKind};
 use crate::precision::Precision;
-use crate::preset::{DateFixture, Preset};
+use crate::preset::Preset;
+use crate::provider::DateTimeProvider;
 use crate::timedelta::{ApplyDateTime, TimeDeltaBuilder};
 use crate::unit::TimeUnit;
 
@@ -84,17 +85,17 @@ Example:
         )
 }
 
-pub fn run<Tz, F>(m: &ArgMatches, fixture: F) -> Result<(), UtError>
+pub fn run<Tz, P>(m: &ArgMatches, provider: P) -> Result<(), UtError>
 where
     Tz: TimeZone,
-    F: DateFixture<Tz>,
+    P: DateTimeProvider<Tz>,
 {
     let maybe_preset = parse_argv(PresetArgv::default(), m.value_of("BASE"))?;
-    let maybe_ymd = parse_argv(YmdArgv::from(fixture.timezone()), m.value_of("YMD"))?;
+    let maybe_ymd = parse_argv(YmdArgv::from(provider.timezone()), m.value_of("YMD"))?;
     let maybe_hms = parse_argv(HmsArgv::default(), m.value_of("HMS"))?;
     let maybe_truncate = parse_argv(TimeUnitArgv::default(), m.value_of("TRUNCATE"))?;
 
-    let base = create_base_date(fixture, maybe_preset, maybe_ymd, maybe_hms, maybe_truncate)?;
+    let base = create_base_date(provider, maybe_preset, maybe_ymd, maybe_hms, maybe_truncate)?;
     let deltas = create_deltas(m.values_of("DELTA"))?;
     let precision = parse_argv(PrecisionArgv::default(), m.value_of("PRECISION"))
         .map(|p| p.unwrap_or(Precision::Second))?;
@@ -121,8 +122,8 @@ where
         .map_or(Ok(None), |r| r.map(Some))
 }
 
-fn create_base_date<F, Tz>(
-    fixture: F,
+fn create_base_date<P, Tz>(
+    provider: P,
     maybe_preset: Option<Preset>,
     maybe_ymd: Option<Date<Tz>>,
     maybe_hms: Option<NaiveTime>,
@@ -130,11 +131,11 @@ fn create_base_date<F, Tz>(
 ) -> Result<DateTime<Tz>, UtError>
 where
     Tz: TimeZone,
-    F: DateFixture<Tz>,
+    P: DateTimeProvider<Tz>,
 {
-    let now = fixture.now();
+    let now = provider.now();
 
-    let maybe_date = maybe_preset.map(|p| p.as_date(&fixture)).or(maybe_ymd);
+    let maybe_date = maybe_preset.map(|p| p.as_date(&provider)).or(maybe_ymd);
     let has_date = maybe_date.is_some();
     let date = maybe_date.unwrap_or(now.date());
     let time = maybe_hms.unwrap_or(if has_date {
