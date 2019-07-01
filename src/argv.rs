@@ -23,3 +23,12 @@ pub trait ParseArgv<T> {
 pub trait ValidateArgv {
     fn validate_argv(s: String) -> Result<(), String>;
 }
+
+pub fn parse_argv<P, T>(parser: P, maybe_text: Option<&str>) -> Result<Option<T>, UtError>
+where
+    P: ParseArgv<T>,
+{
+    maybe_text
+        .map(|s| parser.parse_argv(s))
+        .map_or(Ok(None), |r| r.map(Some))
+}

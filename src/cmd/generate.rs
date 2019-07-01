@@ -2,7 +2,8 @@ use chrono::{Date, DateTime, NaiveTime, TimeZone, Utc};
 use clap::{App, Arg, ArgMatches, SubCommand, Values};
 
 use crate::argv::{
-    DeltaArgv, HmsArgv, ParseArgv, PrecisionArgv, PresetArgv, TimeUnitArgv, ValidateArgv, YmdArgv,
+    parse_argv, DeltaArgv, HmsArgv, ParseArgv, PrecisionArgv, PresetArgv, TimeUnitArgv,
+    ValidateArgv, YmdArgv,
 };
 use crate::delta::DeltaItem;
 use crate::error::{UtError, UtErrorKind};
@@ -111,15 +112,6 @@ struct Request<Tz: TimeZone> {
     base: DateTime<Tz>,
     deltas: Vec<DeltaItem>,
     precision: Precision,
-}
-
-fn parse_argv<P, T>(parser: P, maybe_text: Option<&str>) -> Result<Option<T>, UtError>
-where
-    P: ParseArgv<T>,
-{
-    maybe_text
-        .map(|s| parser.parse_argv(s))
-        .map_or(Ok(None), |r| r.map(Some))
 }
 
 fn create_base_date<P, Tz>(
