@@ -5,6 +5,7 @@ mod hms;
 mod offset;
 mod precision;
 mod preset;
+mod timestamp;
 mod unit;
 mod ymd;
 
@@ -13,6 +14,7 @@ pub use self::hms::HmsArgv;
 pub use self::offset::OffsetArgv;
 pub use self::precision::PrecisionArgv;
 pub use self::preset::PresetArgv;
+pub use self::timestamp::TimestampArgv;
 pub use self::unit::TimeUnitArgv;
 pub use self::ymd::YmdArgv;
 
