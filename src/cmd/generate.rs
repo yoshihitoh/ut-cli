@@ -2,7 +2,8 @@ use chrono::{Date, DateTime, NaiveTime, TimeZone, Utc};
 use clap::{App, Arg, ArgMatches, SubCommand, Values};
 
 use crate::argv::{
-    DeltaArgv, HmsArgv, ParseArgv, PrecisionArgv, PresetArgv, TimeUnitArgv, ValidateArgv, YmdArgv,
+    parse_argv, DeltaArgv, HmsArgv, ParseArgv, PrecisionArgv, PresetArgv, TimeUnitArgv,
+    ValidateArgv, YmdArgv,
 };
 use crate::delta::DeltaItem;
 use crate::error::{UtError, UtErrorKind};
@@ -75,17 +76,16 @@ Example:
         )
         .arg(
             Arg::with_name("PRECISION")
-                .help("Set the precision of output timestamp.")
+                .help("[Deprecated] Set the precision of output timestamp.")
                 .next_line_help(true)
                 .short("p")
                 .long("precision")
                 .takes_value(true)
-                .default_value("second")
                 .validator(PrecisionArgv::validate_argv),
         )
 }
 
-pub fn run<Tz, P>(m: &ArgMatches, provider: P) -> Result<(), UtError>
+pub fn run<Tz, P>(m: &ArgMatches, provider: P, precision: Precision) -> Result<(), UtError>
 where
     Tz: TimeZone,
     P: DateTimeProvider<Tz>,
@@ -97,8 +97,12 @@ where
 
     let base = create_base_date(provider, maybe_preset, maybe_ymd, maybe_hms, maybe_truncate)?;
     let deltas = create_deltas(m.values_of("DELTA"))?;
-    let precision = parse_argv(PrecisionArgv::default(), m.value_of("PRECISION"))
-        .map(|p| p.unwrap_or(Precision::Second))?;
+
+    let maybe_precision = parse_argv(PrecisionArgv::default(), m.value_of("PRECISION"))?;
+    if maybe_precision.is_some() {
+        eprintln!("-p PRECISION option is deprecated.");
+    }
+    let precision = maybe_precision.unwrap_or(precision);
 
     generate(Request {
         base,
@@ -111,15 +115,6 @@ struct Request<Tz: TimeZone> {
     base: DateTime<Tz>,
     deltas: Vec<DeltaItem>,
     precision: Precision,
-}
-
-fn parse_argv<P, T>(parser: P, maybe_text: Option<&str>) -> Result<Option<T>, UtError>
-where
-    P: ParseArgv<T>,
-{
-    maybe_text
-        .map(|s| parser.parse_argv(s))
-        .map_or(Ok(None), |r| r.map(Some))
 }
 
 fn create_base_date<P, Tz>(

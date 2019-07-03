@@ -21,6 +21,9 @@ pub enum UtErrorKind {
     #[fail(display = "Wrong time.")]
     WrongTime,
 
+    #[fail(display = "Wrong timestamp.")]
+    WrongTimestamp,
+
     #[fail(display = "Wrong time offset.")]
     WrongTimeOffset,
 

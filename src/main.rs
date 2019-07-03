@@ -1,5 +1,6 @@
 mod argv;
 mod cmd;
+mod config;
 mod delta;
 mod error;
 mod find;
@@ -16,8 +17,10 @@ use clap::{
     crate_authors, crate_description, crate_name, crate_version, App, AppSettings, Arg, ArgMatches,
 };
 
-use crate::argv::{OffsetArgv, ParseArgv, ValidateArgv};
+use crate::argv::{OffsetArgv, ParseArgv, PrecisionArgv, ValidateArgv};
+use crate::config::Config;
 use crate::error::UtError;
+use crate::precision::Precision;
 use crate::provider::{
     DateTimeProvider, FixedOffsetProvider, FromTimeZone, LocalProvider, UtcProvider,
 };
@@ -50,34 +53,56 @@ fn app() -> App<'static, 'static> {
                 .allow_hyphen_values(true)
                 .validator(OffsetArgv::validate_argv),
         )
+        .arg(
+            Arg::with_name("PRECISION")
+                .help("Set the precision of output timestamp.")
+                .next_line_help(true)
+                .short("p")
+                .long("precision")
+                .takes_value(true)
+                .validator(PrecisionArgv::validate_argv),
+        )
+}
+
+fn config() -> Config {
+    Config::from_env()
 }
 
 fn run() -> Result<(), UtError> {
     let app = app();
+    let config = config();
+    let precision = PrecisionArgv::default().parse_argv(config.precision().unwrap_or("second"))?;
+
     let main_matches = app.get_matches();
 
     if main_matches.is_present("UTC") {
         let provider: UtcProvider = UtcProvider::from_timezone(Utc);
-        run_with(&main_matches, provider)
-    } else if let Some(offset_name) = main_matches.value_of("OFFSET") {
-        let offset = OffsetArgv::default().parse_argv(offset_name)?;
+        run_with(&main_matches, provider, precision)
+    } else if let Some(offset_text) = main_matches.value_of("OFFSET").or(config.offset()) {
+        let offset = OffsetArgv::default().parse_argv(offset_text)?;
         let provider: FixedOffsetProvider = FixedOffsetProvider::from_timezone(offset);
-        run_with(&main_matches, provider)
+        run_with(&main_matches, provider, precision)
     } else {
         let provider: LocalProvider = LocalProvider::from_timezone(Local);
-        run_with(&main_matches, provider)
+        run_with(&main_matches, provider, precision)
     }
 }
 
-fn run_with<O, Tz, P>(main_matches: &ArgMatches, provider: P) -> Result<(), UtError>
+fn run_with<O, Tz, P>(
+    main_matches: &ArgMatches,
+    provider: P,
+    precision: Precision,
+) -> Result<(), UtError>
 where
     O: Offset + Display + Sized,
     Tz: TimeZone<Offset = O>,
     P: DateTimeProvider<Tz>,
 {
     match main_matches.subcommand() {
-        ("generate", generate_matches) => cmd::generate::run(generate_matches.unwrap(), provider),
-        ("parse", parse_matches) => cmd::parse::run(parse_matches.unwrap(), provider),
+        ("generate", generate_matches) => {
+            cmd::generate::run(generate_matches.unwrap(), provider, precision)
+        }
+        ("parse", parse_matches) => cmd::parse::run(parse_matches.unwrap(), provider, precision),
         _ => panic!("never happen"),
     }
 }
