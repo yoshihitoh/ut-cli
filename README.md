@@ -20,7 +20,7 @@ $ git clone https://github.com/yoshihitoh/ut-cli
 $ cd ut-cli
 $ cargo build --release
 $ ./target/release/ut --version
-ut 0.1.3
+ut 0.1.4
 ```
 
 Also there are pre-built binary for Linux and macOS.
@@ -28,9 +28,9 @@ See [releases](https://github.com/yoshihitoh/ut-cli/releases).
 
 ### Usage
 ``` bash
-ut 0.1.3
+ut-cli 0.1.4
 yoshihitoh <yoshihito.arih@gmail.com>
-
+A command line tool to handle unix timestamp.
 
 USAGE:
     ut [FLAGS] [OPTIONS] <SUBCOMMAND>
@@ -41,13 +41,23 @@ FLAGS:
     -V, --version    Prints version information
 
 OPTIONS:
-    -o, --offset <OFFSET>    Use given value as timezone offset.
+    -o, --offset <OFFSET>          Use given value as timezone offset.
+    -p, --precision <PRECISION>
+            Set the precision of output timestamp.
+
 
 SUBCOMMANDS:
     generate    Generate unix timestamp with given options.
     help        Prints this message or the help of the given subcommand(s)
     parse       Parse a unix timestamp and print it in human readable format.
 ```
+
+You can set options via envrionment variables.
+
+| name         | equiv option   | example 
+|:------------:|:--------------:|:-----------
+| UT_OFFSET    | -o/--offset    | 09:00
+| UT_PRECISION | -p/--precision | millisecond
 
 See also
 
