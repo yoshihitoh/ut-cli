@@ -19,7 +19,7 @@ impl ParseArgv<i64> for TimestampArgv {
 
 impl ValidateArgv for TimestampArgv {
     fn validate_argv(s: String) -> Result<(), String> {
-        s.parse::<i32>()
+        s.parse::<i64>()
             .map(|_| ())
             .map_err(|_| format!("TIMESTAMP must be a number. given: {}", s))
     }
