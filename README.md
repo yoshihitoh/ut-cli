@@ -6,6 +6,29 @@ ut is a command line tool to handle a unix timestamp.
 [![Build Status](https://travis-ci.com/yoshihitoh/ut-cli.svg?branch=master)](https://travis-ci.com/yoshihitoh/ut-cli)
 ![Dependabot](https://api.dependabot.com/badges/status?host=github&repo=yoshihitoh/ut-cli)
 
+### Motivation
+There is a number of times to generate/parse unix timestamps.
+I think `date` command exists to handle these situations. But there are a few problems that they are small, but vital for me.
+- cannot use same options between macOS and Linux.
+- hard to remember usage. (it might be happen because of above problem.)
+
+That's why I made a new command line tool `ut-cli`.
+
+I hope ut-cli works well when developers need to use the command which requires timestamps like aws-cli.
+
+### Example usage
+
+Search logs from specific time period.
+``` bash
+# from yesterday to today
+$ aws logs filter-log-events \
+    --log-group-name <LOG_GROUP_NAME> \
+    --log-stream-names <LOG_STREAM_NAMES> \
+    --query <QUERY> \
+    --start-time $(ut -p ms g -b yesterday) \
+    --end-time $(ut -p ms g -b today)
+```
+
 ### Installation
 
 If you have rust toolchain, ut-cli can be installed with cargo.
@@ -59,8 +82,23 @@ You can set options via envrionment variables.
 | UT_OFFSET    | -o/--offset    | 09:00
 | UT_PRECISION | -p/--precision | millisecond
 
-See also
+```bash
+# set variables
+$ export UT_OFFSET='09:00'
+$ export UT_PRECISION=millisecond
 
+# run command without `-o` and `-p` option
+$ ut p $(ut g)
+```
+
+is equivalent to
+
+```bash
+$ ut -o '09:00' -p millisecond p $(ut -o '09:00' -p millisecond g)
+```
+
+
+There are two subcommands available for now.
 - [generate(g)](#generate-a-unix-timestamp)
 - [parse(p)](#parse-a-unix-timestamp)
 
@@ -72,7 +110,7 @@ $ ut generate -b today
 1560870000
 
 # You can use `-p` option to show it in millisecond.
-$ ut generate -b today -p ms
+$ ut -p ms generate -b today
 1560870000000
 ```
 
@@ -95,7 +133,7 @@ $ ut p $(ut g -b today)
 2019-06-19 00:00:00 (+09:00)
 
 # You can parse timestamp in milliseconds.
-$ ut p -p ms $(ut g -b today -p ms -d 11h -d 22min -d 33s -d 444ms)
+$ ut -p ms p $(ut -p ms g -b today -d 11h -d 22min -d 33s -d 444ms)
 2019-06-19 11:22:33.444 (+09:00)
 ```
 
