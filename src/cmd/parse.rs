@@ -19,13 +19,12 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .allow_hyphen_values(true),
         )
         .arg(
-            // TODO: add validator
             Arg::with_name("PRECISION")
-                .help("Set a precision of the timestamp.")
+                .help("[Deprecated] Set a precision of the timestamp.")
                 .short("p")
                 .long("precision")
                 .takes_value(true)
-                .default_value("second"),
+                .validator(PrecisionArgv::validate_argv),
         )
 }
 
@@ -36,8 +35,12 @@ where
     P: DateTimeProvider<Tz>,
 {
     let timestamp = parse_argv(TimestampArgv::default(), m.value_of("TIMESTAMP"))?.unwrap();
-    let precision =
-        parse_argv(PrecisionArgv::default(), m.value_of("PRECISION"))?.unwrap_or(Precision::Second);
+
+    let maybe_precision = parse_argv(PrecisionArgv::default(), m.value_of("PRECISION"))?;
+    if maybe_precision.is_some() {
+        eprintln!("-p PRECISION option is deprecated.");
+    }
+    let precision = maybe_precision.unwrap_or(Precision::Second);
 
     let dt = precision.parse_timestamp(provider.timezone(), timestamp);
     println!("{}", dt.format(precision.preferred_format()).to_string());

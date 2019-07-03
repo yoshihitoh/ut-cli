@@ -76,12 +76,11 @@ Example:
         )
         .arg(
             Arg::with_name("PRECISION")
-                .help("Set the precision of output timestamp.")
+                .help("[Deprecated] Set the precision of output timestamp.")
                 .next_line_help(true)
                 .short("p")
                 .long("precision")
                 .takes_value(true)
-                .default_value("second")
                 .validator(PrecisionArgv::validate_argv),
         )
 }
@@ -98,8 +97,12 @@ where
 
     let base = create_base_date(provider, maybe_preset, maybe_ymd, maybe_hms, maybe_truncate)?;
     let deltas = create_deltas(m.values_of("DELTA"))?;
-    let precision = parse_argv(PrecisionArgv::default(), m.value_of("PRECISION"))
-        .map(|p| p.unwrap_or(Precision::Second))?;
+
+    let maybe_precision = parse_argv(PrecisionArgv::default(), m.value_of("PRECISION"))?;
+    if maybe_precision.is_some() {
+        eprintln!("-p PRECISION option is deprecated.");
+    }
+    let precision = maybe_precision.unwrap_or(Precision::Second);
 
     generate(Request {
         base,
