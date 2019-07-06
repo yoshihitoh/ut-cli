@@ -3,6 +3,7 @@ use std::env;
 static OFFSET_KEY: &'static str = "UT_OFFSET";
 static PRECISION_KEY: &'static str = "UT_PRECISION";
 
+#[derive(Debug)]
 pub struct Config {
     offset: Option<String>,
     precision: Option<String>,

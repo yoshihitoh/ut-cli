@@ -71,9 +71,13 @@ fn config() -> Config {
 fn run() -> Result<(), UtError> {
     let app = app();
     let config = config();
-    let precision = PrecisionArgv::default().parse_argv(config.precision().unwrap_or("second"))?;
-
     let main_matches = app.get_matches();
+    let precision = PrecisionArgv::default().parse_argv(
+        main_matches
+            .value_of("PRECISION")
+            .or(config.precision())
+            .unwrap_or("second"),
+    )?;
 
     if main_matches.is_present("UTC") {
         let provider: UtcProvider = UtcProvider::from_timezone(Utc);
