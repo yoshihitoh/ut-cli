@@ -89,9 +89,9 @@ impl FromStr for Ymd {
 
         re.captures(s)
             .map(|capture| {
-                let y = extract_number(capture.get(1).or(capture.get(4)));
-                let m = extract_number(capture.get(2).or(capture.get(5)));
-                let d = extract_number(capture.get(3).or(capture.get(6)));
+                let y = extract_number(capture.get(1).or_else(|| capture.get(4)));
+                let m = extract_number(capture.get(2).or_else(|| capture.get(5)));
+                let d = extract_number(capture.get(3).or_else(|| capture.get(6)));
 
                 validate_number(y, 1900, 2999, || {
                     YmdError::WrongYear(s.to_string(), 1900, 2999)
@@ -100,7 +100,7 @@ impl FromStr for Ymd {
                 .and_then(|_| validate_number(d, 1, 31, || YmdError::WrongDay(s.to_string())))
                 .map(|_| Ymd { y, m, d })
             })
-            .unwrap_or(Err(YmdError::WrongFormat(s.to_string())))
+            .unwrap_or_else(|| Err(YmdError::WrongFormat(s.to_string())))
     }
 }
 
@@ -183,5 +183,4 @@ mod tests {
         assert!(YmdArgv::<Utc>::validate_argv("2019-06-123".to_string()).is_err());
         assert!(YmdArgv::<Utc>::validate_argv("--".to_string()).is_err());
     }
-
 }

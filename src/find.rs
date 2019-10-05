@@ -26,7 +26,7 @@ where
     E: IntoEnumIterator<Iterator = I> + FromStr + Copy + Display,
     I: Iterator<Item = E>,
 {
-    E::from_str(name).map(|x| Ok(x)).unwrap_or_else(|_| {
+    E::from_str(name).map(Ok).unwrap_or_else(|_| {
         let items = find_items(E::iter(), name);
         if items.len() == 1 {
             Ok(*items.first().unwrap())

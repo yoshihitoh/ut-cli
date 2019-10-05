@@ -44,14 +44,14 @@ impl TimeUnit {
         TimeUnit::iter().map(|t| t.to_string()).collect()
     }
 
-    pub fn truncate<Tz: TimeZone>(&self, dt: DateTime<Tz>) -> DateTime<Tz> {
-        let d = match *self {
+    pub fn truncate<Tz: TimeZone>(self, dt: DateTime<Tz>) -> DateTime<Tz> {
+        let d = match self {
             TimeUnit::Year => dt.date().with_month(1).unwrap().with_day(1).unwrap(),
             TimeUnit::Month => dt.date().with_day(1).unwrap(),
             _ => dt.date(),
         };
 
-        match *self {
+        match self {
             TimeUnit::Hour => d.and_hms(dt.hour(), 0, 0),
             TimeUnit::Minute => d.and_hms(dt.hour(), dt.minute(), 0),
             TimeUnit::Second => d.and_hms(dt.hour(), dt.minute(), dt.second()),

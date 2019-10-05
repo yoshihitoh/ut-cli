@@ -132,11 +132,13 @@ where
 
     let maybe_date = maybe_preset.map(|p| p.as_date(&provider)).or(maybe_ymd);
     let has_date = maybe_date.is_some();
-    let date = maybe_date.unwrap_or(now.date());
-    let time = maybe_hms.unwrap_or(if has_date {
-        NaiveTime::from_hms(0, 0, 0)
-    } else {
-        now.time()
+    let date = maybe_date.unwrap_or_else(|| now.date());
+    let time = maybe_hms.unwrap_or_else(|| {
+        if has_date {
+            NaiveTime::from_hms(0, 0, 0)
+        } else {
+            now.time()
+        }
     });
 
     Ok(maybe_truncate
@@ -148,7 +150,7 @@ fn create_deltas(maybe_values: Option<Values>) -> Result<Vec<DeltaItem>, UtError
     let delta_argv = DeltaArgv::default();
     maybe_values
         .map(|values| values.map(|s| delta_argv.parse_argv(s)).collect())
-        .unwrap_or(Ok(Vec::new()))
+        .unwrap_or_else(|| Ok(Vec::new()))
 }
 
 fn generate<Tz: TimeZone>(request: Request<Tz>) -> Result<(), UtError> {

@@ -1,7 +1,7 @@
 use std::env;
 
-static OFFSET_KEY: &'static str = "UT_OFFSET";
-static PRECISION_KEY: &'static str = "UT_PRECISION";
+static OFFSET_KEY: &str = "UT_OFFSET";
+static PRECISION_KEY: &str = "UT_PRECISION";
 
 #[derive(Debug)]
 pub struct Config {

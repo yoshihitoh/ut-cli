@@ -78,8 +78,8 @@ impl FromStr for Offset {
                         _ => 1,
                     })
                     .unwrap_or(1);
-                let h = extract_number(capture.get(2).or(capture.get(4))).unwrap_or(0);
-                let m = extract_number(capture.get(3).or(capture.get(5))).unwrap_or(0);
+                let h = extract_number(capture.get(2).or_else(|| capture.get(4))).unwrap_or(0);
+                let m = extract_number(capture.get(3).or_else(|| capture.get(5))).unwrap_or(0);
 
                 validate_number(h, 0, 23, || OffsetError::WrongHour(text.to_string()))
                     .and_then(|_| {
@@ -87,7 +87,7 @@ impl FromStr for Offset {
                     })
                     .map(|_| Offset { sign, h, m })
             })
-            .unwrap_or(Err(OffsetError::WrongFormat(text.to_string())))
+            .unwrap_or_else(|| Err(OffsetError::WrongFormat(text.to_string())))
     }
 }
 

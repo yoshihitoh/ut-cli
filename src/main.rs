@@ -75,14 +75,14 @@ fn run() -> Result<(), UtError> {
     let precision = PrecisionArgv::default().parse_argv(
         main_matches
             .value_of("PRECISION")
-            .or(config.precision())
+            .or_else(|| config.precision())
             .unwrap_or("second"),
     )?;
 
     if main_matches.is_present("UTC") {
         let provider: UtcProvider = UtcProvider::from_timezone(Utc);
         run_with(&main_matches, provider, precision)
-    } else if let Some(offset_text) = main_matches.value_of("OFFSET").or(config.offset()) {
+    } else if let Some(offset_text) = main_matches.value_of("OFFSET").or_else(|| config.offset()) {
         let offset = OffsetArgv::default().parse_argv(offset_text)?;
         let provider: FixedOffsetProvider = FixedOffsetProvider::from_timezone(offset);
         run_with(&main_matches, provider, precision)
