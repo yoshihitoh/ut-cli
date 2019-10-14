@@ -31,7 +31,7 @@ impl DeltaItem {
         DeltaItem { unit, value }
     }
 
-    pub fn apply_timedelta_builder(&self, builder: TimeDeltaBuilder) -> TimeDeltaBuilder {
+    pub fn apply_timedelta_builder(self, builder: TimeDeltaBuilder) -> TimeDeltaBuilder {
         match self.unit {
             TimeUnit::Year => builder.add_years(self.value),
             TimeUnit::Month => builder.add_months(self.value),
@@ -64,7 +64,7 @@ impl FromStr for DeltaItem {
                     .map_err(DeltaItemError::TimeUnitFindError)
                     .and_then(|unit| r_value.map(|value| DeltaItem { unit, value }))
             })
-            .unwrap_or(Err(DeltaItemError::WrongFormat(s.to_string())))
+            .unwrap_or_else(|| Err(DeltaItemError::WrongFormat(s.to_string())))
     }
 }
 

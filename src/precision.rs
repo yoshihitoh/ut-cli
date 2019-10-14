@@ -29,22 +29,22 @@ impl Precision {
         Precision::iter().map(|p| p.to_string()).collect()
     }
 
-    pub fn parse_timestamp<Tz: TimeZone>(&self, tz: Tz, timestamp: i64) -> DateTime<Tz> {
-        match *self {
+    pub fn parse_timestamp<Tz: TimeZone>(self, tz: Tz, timestamp: i64) -> DateTime<Tz> {
+        match self {
             Precision::Second => tz.timestamp(timestamp, 0),
             Precision::MilliSecond => tz.timestamp_millis(timestamp),
         }
     }
 
-    pub fn to_timestamp<Tz: TimeZone>(&self, dt: DateTime<Tz>) -> i64 {
-        match *self {
+    pub fn to_timestamp<Tz: TimeZone>(self, dt: DateTime<Tz>) -> i64 {
+        match self {
             Precision::Second => dt.timestamp(),
             Precision::MilliSecond => dt.timestamp_millis(),
         }
     }
 
-    pub fn preferred_format(&self) -> &'static str {
-        match *self {
+    pub fn preferred_format(self) -> &'static str {
+        match self {
             Precision::Second => "%Y-%m-%d %H:%M:%S (%Z)",
             Precision::MilliSecond => "%Y-%m-%d %H:%M:%S%.3f (%Z)",
         }

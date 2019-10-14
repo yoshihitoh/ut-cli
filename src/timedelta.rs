@@ -97,11 +97,11 @@ impl TimeDelta {
 
 impl<Tz: TimeZone> ApplyDateTime<Tz> for TimeDelta {
     fn apply_datetime(&self, target: DateTime<Tz>) -> Option<DateTime<Tz>> {
-        let duration = Duration::microseconds(self.microseconds() as i64)
-            + Duration::seconds(self.seconds() as i64)
-            + Duration::minutes(self.minutes() as i64)
-            + Duration::hours(self.hours() as i64)
-            + Duration::days(self.days() as i64);
+        let duration = Duration::microseconds(i64::from(self.microseconds()))
+            + Duration::seconds(i64::from(self.seconds()))
+            + Duration::minutes(i64::from(self.minutes()))
+            + Duration::hours(i64::from(self.hours()))
+            + Duration::days(i64::from(self.days()));
 
         let duration_applied: DateTime<Tz> = target + duration;
 

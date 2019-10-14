@@ -37,6 +37,6 @@ fn add_days<Tz: TimeZone>(date: Date<Tz>, days: i32) -> Date<Tz> {
     let delta = TimeDeltaBuilder::default().days(days).build();
     delta
         .apply_datetime(date.and_hms(0, 0, 0))
-        .expect(&format!("can't add days. date={:?}, days={}", date, days))
+        .unwrap_or_else(|| panic!("can't add days. date={:?}, days={}", date, days))
         .date()
 }

@@ -41,6 +41,7 @@ impl Fail for UtError {
         self.inner.name()
     }
 
+    #[allow(bare_trait_objects)] // Fail trait requires this signature.
     fn cause(&self) -> Option<&Fail> {
         self.inner.cause()
     }

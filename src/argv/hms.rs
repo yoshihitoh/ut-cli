@@ -72,9 +72,9 @@ impl FromStr for Hms {
 
         re.captures(text)
             .map(|capture| {
-                let h = extract_number(capture.get(1).or(capture.get(4)));
-                let m = extract_number(capture.get(2).or(capture.get(5)));
-                let s = extract_number(capture.get(3).or(capture.get(6)));
+                let h = extract_number(capture.get(1).or_else(|| capture.get(4)));
+                let m = extract_number(capture.get(2).or_else(|| capture.get(5)));
+                let s = extract_number(capture.get(3).or_else(|| capture.get(6)));
 
                 validate_number(h, 0, 23, || HmsError::WrongHour(text.to_string()))
                     .and_then(|_| {
@@ -85,7 +85,7 @@ impl FromStr for Hms {
                     })
                     .map(|_| Hms { h, m, s })
             })
-            .unwrap_or(Err(HmsError::WrongFormat(text.to_string())))
+            .unwrap_or_else(|| Err(HmsError::WrongFormat(text.to_string())))
     }
 }
 

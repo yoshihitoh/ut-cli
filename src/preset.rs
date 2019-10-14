@@ -33,12 +33,12 @@ impl Preset {
         Preset::iter().map(|p| p.to_string()).collect()
     }
 
-    pub fn as_date<P, Tz>(&self, provider: &P) -> Date<Tz>
+    pub fn as_date<P, Tz>(self, provider: &P) -> Date<Tz>
     where
         P: DateTimeProvider<Tz>,
         Tz: TimeZone,
     {
-        match *self {
+        match self {
             Preset::Today => provider.today(),
             Preset::Tomorrow => provider.tomorrow(),
             Preset::Yesterday => provider.yesterday(),
