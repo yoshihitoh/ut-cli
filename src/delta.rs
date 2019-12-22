@@ -3,20 +3,61 @@ use std::str::FromStr;
 use failure::Fail;
 use regex::Regex;
 
-use crate::find::FindError;
 use crate::timedelta::TimeDeltaBuilder;
-use crate::unit::TimeUnit;
+use crate::unit::{TimeUnit, TimeUnitError};
+use crate::validate::IntoValidationError;
 
 #[derive(Fail, Debug, PartialEq)]
 pub enum DeltaItemError {
-    #[fail(display = "Wrong delta format: {}", _0)]
+    #[fail(display = "Wrong format. error:{}", _0)]
     WrongFormat(String),
 
-    #[fail(display = "Parse int error: {}", _0)]
-    ParseInt(String),
+    #[fail(display = "Wrong value. error:{}", _0)]
+    WrongValue(String),
 
-    #[fail(display = "TimeUnit find error: {}", _0)]
-    TimeUnitFindError(FindError),
+    #[fail(display = "Wrong unit. error:{}", _0)]
+    WrongUnit(TimeUnitError),
+}
+
+#[cfg(test)]
+impl DeltaItemError {
+    pub fn is_wrong_format(&self) -> bool {
+        use DeltaItemError::*;
+        match self {
+            WrongFormat(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_wrong_value(&self) -> bool {
+        use DeltaItemError::*;
+        match self {
+            WrongValue(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_wrong_unit(&self) -> bool {
+        use DeltaItemError::*;
+        match self {
+            WrongUnit(_) => true,
+            _ => false,
+        }
+    }
+}
+
+impl IntoValidationError for DeltaItemError {
+    fn into_validation_error(self) -> String {
+        use DeltaItemError::*;
+        match &self {
+            WrongFormat(_) => format!(
+                "{} DELTA must consist of number and unit. See examples on help.",
+                self
+            ),
+            WrongValue(_) => format!("{} DELTA value must be a number.", self),
+            WrongUnit(e) => format!("{} {}", self, e),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -58,10 +99,10 @@ impl FromStr for DeltaItem {
                     .unwrap()
                     .as_str()
                     .parse::<i32>()
-                    .map_err(|e| DeltaItemError::ParseInt(e.to_string()));
+                    .map_err(|e| DeltaItemError::WrongValue(e.to_string()));
 
                 TimeUnit::find_by_name(caps.get(2).unwrap().as_str())
-                    .map_err(DeltaItemError::TimeUnitFindError)
+                    .map_err(DeltaItemError::WrongUnit)
                     .and_then(|unit| r_value.map(|value| DeltaItem { unit, value }))
             })
             .unwrap_or_else(|| Err(DeltaItemError::WrongFormat(s.to_string())))
@@ -72,8 +113,7 @@ impl FromStr for DeltaItem {
 mod tests {
     use std::str::FromStr;
 
-    use crate::delta::{DeltaItem, DeltaItemError};
-    use crate::find::FindError;
+    use crate::delta::DeltaItem;
     use crate::unit::TimeUnit;
 
     #[test]
@@ -91,27 +131,20 @@ mod tests {
             Ok(DeltaItem::new(TimeUnit::Day, 31))
         );
 
-        assert_eq!(
-            DeltaItem::from_str("+ 31d"),
-            Err(DeltaItemError::WrongFormat("+ 31d".to_string()))
-        );
+        let r = DeltaItem::from_str("+ 31d");
+        assert!(r.is_err());
+        assert!(r.err().unwrap().is_wrong_format());
 
-        assert_eq!(
-            DeltaItem::from_str("aa d"),
-            Err(DeltaItemError::WrongFormat("aa d".to_string()))
-        );
+        let r = DeltaItem::from_str("aa d");
+        assert!(r.is_err());
+        assert!(r.err().unwrap().is_wrong_format());
 
-        assert!(DeltaItem::from_str("12345678901d")
-            .err()
-            .map(|e| match e {
-                DeltaItemError::ParseInt(_) => true,
-                _ => false,
-            })
-            .unwrap_or(false));
+        let r = DeltaItem::from_str("12345678901d");
+        assert!(r.is_err());
+        assert!(r.err().unwrap().is_wrong_value());
 
-        assert_eq!(
-            DeltaItem::from_str("31b"),
-            Err(DeltaItemError::TimeUnitFindError(FindError::NotFound))
-        );
+        let r = DeltaItem::from_str("31b");
+        assert!(r.is_err());
+        assert!(r.err().unwrap().is_wrong_unit());
     }
 }

@@ -1,4 +1,5 @@
-use crate::argv::{PrecisionArgv, TimestampArgv, ValidateArgv};
+use crate::precision::Precision;
+use crate::validate::IntoValidationError;
 use clap::{App, AppSettings, Arg, SubCommand};
 
 pub fn command(name: &str) -> App<'static, 'static> {
@@ -9,7 +10,7 @@ pub fn command(name: &str) -> App<'static, 'static> {
             Arg::with_name("TIMESTAMP")
                 .help("Set a timestamp to parse.")
                 .required(true)
-                .validator(TimestampArgv::validate_argv)
+                .validator(|s| s.parse::<i64>().map(|_| ()).map_err(|e| format!("{:?}", e)))
                 .allow_hyphen_values(true),
         )
         .arg(
@@ -18,6 +19,10 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .short("p")
                 .long("precision")
                 .takes_value(true)
-                .validator(PrecisionArgv::validate_argv),
+                .validator(|s| {
+                    Precision::find_by_name(&s)
+                        .map(|_| ())
+                        .map_err(|e| e.into_validation_error())
+                }),
         )
 }

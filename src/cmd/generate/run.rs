@@ -1,31 +1,51 @@
+use std::fmt::Debug;
+
 use chrono::prelude::*;
 use clap::{ArgMatches, Values};
+use failure::ResultExt;
 
-use crate::argv::{
-    parse_argv, DeltaArgv, HmsArgv, ParseArgv, PrecisionArgv, PresetArgv, TimeUnitArgv, YmdArgv,
-};
+use crate::datetime::{Hms, HmsError, Ymd, YmdError};
 use crate::delta::DeltaItem;
 use crate::error::{UtError, UtErrorKind};
+use crate::parse::parse_argv_opt;
 use crate::precision::Precision;
 use crate::preset::Preset;
 use crate::provider::DateTimeProvider;
 use crate::timedelta::{ApplyDateTime, TimeDeltaBuilder};
 use crate::unit::TimeUnit;
+use std::str::FromStr;
 
 pub fn run<Tz, P>(m: &ArgMatches, provider: P, precision: Precision) -> Result<(), UtError>
 where
-    Tz: TimeZone,
+    Tz: TimeZone + Debug,
     P: DateTimeProvider<Tz>,
 {
-    let maybe_preset = parse_argv(PresetArgv::default(), m.value_of("BASE"))?;
-    let maybe_ymd = parse_argv(YmdArgv::from(provider.timezone()), m.value_of("YMD"))?;
-    let maybe_hms = parse_argv(HmsArgv::default(), m.value_of("HMS"))?;
-    let maybe_truncate = parse_argv(TimeUnitArgv::default(), m.value_of("TRUNCATE"))?;
+    let maybe_preset = m
+        .value_of("BASE")
+        .map(|s| Preset::find_by_name(s).map(Some))
+        .unwrap_or_else(|| Ok(None))
+        .context(UtErrorKind::PresetError)?;
+
+    let maybe_ymd =
+        parse_argv_opt::<Ymd, YmdError>(m.value_of("YMD")).context(UtErrorKind::WrongDate)?;
+    let maybe_hms =
+        parse_argv_opt::<Hms, HmsError>(m.value_of("HMS")).context(UtErrorKind::WrongTime)?;
+
+    let maybe_truncate = m
+        .value_of("TRUNCATE")
+        .map(|s| TimeUnit::find_by_name(s).map(Some))
+        .unwrap_or_else(|| Ok(None))
+        .context(UtErrorKind::TimeUnitError)?;
 
     let base = create_base_date(provider, maybe_preset, maybe_ymd, maybe_hms, maybe_truncate)?;
     let deltas = create_deltas(m.values_of("DELTA"))?;
 
-    let maybe_precision = parse_argv(PrecisionArgv::default(), m.value_of("PRECISION"))?;
+    let maybe_precision = m
+        .value_of("PRECISION")
+        .map(|s| Precision::find_by_name(s).map(Some))
+        .unwrap_or_else(|| Ok(None))
+        .context(UtErrorKind::PrecisionError)?;
+
     if maybe_precision.is_some() {
         eprintln!("-p PRECISION option is deprecated.");
     }
@@ -47,20 +67,28 @@ struct Request<Tz: TimeZone> {
 fn create_base_date<P, Tz>(
     provider: P,
     maybe_preset: Option<Preset>,
-    maybe_ymd: Option<Date<Tz>>,
-    maybe_hms: Option<NaiveTime>,
+    maybe_ymd: Option<Ymd>,
+    maybe_hms: Option<Hms>,
     maybe_truncate: Option<TimeUnit>,
 ) -> Result<DateTime<Tz>, UtError>
 where
-    Tz: TimeZone,
+    Tz: TimeZone + Debug,
     P: DateTimeProvider<Tz>,
 {
     let now = provider.now();
 
-    let maybe_date = maybe_preset.map(|p| p.as_date(&provider)).or(maybe_ymd);
+    let maybe_date = maybe_preset
+        .map(|p| Ok(Some(p.as_date(&provider))))
+        .unwrap_or_else(|| {
+            maybe_ymd.map_or(Ok(None), |ymd| {
+                ymd.into_date(&provider.timezone()).map(Some)
+            })
+        })
+        .context(UtErrorKind::WrongDate)?;
+
     let has_date = maybe_date.is_some();
     let date = maybe_date.unwrap_or_else(|| now.date());
-    let time = maybe_hms.unwrap_or_else(|| {
+    let time = maybe_hms.map(|hms| hms.into()).unwrap_or_else(|| {
         if has_date {
             NaiveTime::from_hms(0, 0, 0)
         } else {
@@ -74,10 +102,14 @@ where
 }
 
 fn create_deltas(maybe_values: Option<Values>) -> Result<Vec<DeltaItem>, UtError> {
-    let delta_argv = DeltaArgv::default();
-    maybe_values
-        .map(|values| values.map(|s| delta_argv.parse_argv(s)).collect())
-        .unwrap_or_else(|| Ok(Vec::new()))
+    let deltas = maybe_values
+        .map(|values| {
+            values
+                .map(|s| DeltaItem::from_str(s).context(UtErrorKind::DeltaError))
+                .collect()
+        })
+        .unwrap_or_else(|| Ok(Vec::new()))?;
+    Ok(deltas)
 }
 
 fn generate<Tz: TimeZone>(request: Request<Tz>) -> Result<(), UtError> {

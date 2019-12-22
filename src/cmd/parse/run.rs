@@ -1,20 +1,32 @@
-use crate::argv::{parse_argv, PrecisionArgv, TimestampArgv};
-use crate::error::UtError;
-use crate::precision::Precision;
-use crate::provider::DateTimeProvider;
+use std::fmt::{Debug, Display};
+
 use chrono::{Offset, TimeZone};
 use clap::ArgMatches;
-use std::fmt::Display;
+
+use crate::error::{UtError, UtErrorKind};
+use crate::precision::Precision;
+use crate::provider::DateTimeProvider;
+use failure::ResultExt;
 
 pub fn run<O, Tz, P>(m: &ArgMatches, provider: P, precision: Precision) -> Result<(), UtError>
 where
     O: Offset + Display + Sized,
-    Tz: TimeZone<Offset = O>,
+    Tz: TimeZone<Offset = O> + Debug,
     P: DateTimeProvider<Tz>,
 {
-    let timestamp = parse_argv(TimestampArgv::default(), m.value_of("TIMESTAMP"))?.unwrap();
+    // TODO: create timestamp type.
+    let timestamp = m
+        .value_of("TIMESTAMP")
+        .map(|s| s.parse::<i64>().map(Some))
+        .unwrap_or_else(|| Ok(None))
+        .context(UtErrorKind::WrongTimestamp)?
+        .unwrap();
 
-    let maybe_precision = parse_argv(PrecisionArgv::default(), m.value_of("PRECISION"))?;
+    let maybe_precision = m
+        .value_of("PRECISION")
+        .map(|s| Precision::find_by_name(s).map(Some))
+        .unwrap_or_else(|| Ok(None))
+        .context(UtErrorKind::PrecisionError)?;
     if maybe_precision.is_some() {
         eprintln!("-p PRECISION option is deprecated.");
     }

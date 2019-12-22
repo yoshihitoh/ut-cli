@@ -1,14 +1,37 @@
 use chrono::{DateTime, TimeZone};
+use failure::Fail;
 use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 
 use crate::find::{enum_names, find_enum_item, FindError};
+use crate::validate::IntoValidationError;
 
 lazy_static! {
     static ref PRESET_NAMES: Vec<String> = enum_names(Precision::iter());
     static ref POSSIBLE_VALUES: Vec<&'static str> =
         PRESET_NAMES.iter().map(|s| s.as_str()).collect();
+}
+
+#[derive(Fail, Debug, PartialEq)]
+pub enum PrecisionError {
+    #[fail(display = "Wrong precision. error:{}", _0)]
+    WrongName(FindError),
+}
+
+impl IntoValidationError for PrecisionError {
+    fn into_validation_error(self) -> String {
+        use PrecisionError::*;
+        match &self {
+            WrongName(e) => match e {
+                FindError::NotFound => {
+                    let names = Precision::possible_names();
+                    format!("{} possible names: [{}]", self, names.join(", "))
+                }
+                _ => format!("{}", self),
+            },
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, EnumIter, EnumString, Display)]
@@ -21,8 +44,8 @@ pub enum Precision {
 }
 
 impl Precision {
-    pub fn find_by_name(name: &str) -> Result<Precision, FindError> {
-        find_enum_item(&name.to_ascii_lowercase())
+    pub fn find_by_name(name: &str) -> Result<Precision, PrecisionError> {
+        find_enum_item(&name.to_ascii_lowercase()).map_err(PrecisionError::WrongName)
     }
 
     pub fn possible_names() -> Vec<String> {
@@ -57,7 +80,7 @@ mod tests {
     use chrono::Utc;
 
     use crate::find::FindError;
-    use crate::precision::Precision;
+    use crate::precision::{Precision, PrecisionError};
 
     #[test]
     fn find_by_name_second() {
@@ -77,8 +100,14 @@ mod tests {
 
     #[test]
     fn find_by_name_not_supported() {
-        assert_eq!(Precision::find_by_name("year"), Err(FindError::NotFound));
-        assert_eq!(Precision::find_by_name("min"), Err(FindError::NotFound));
+        assert_eq!(
+            Precision::find_by_name("year"),
+            Err(PrecisionError::WrongName(FindError::NotFound))
+        );
+        assert_eq!(
+            Precision::find_by_name("min"),
+            Err(PrecisionError::WrongName(FindError::NotFound))
+        );
     }
 
     #[test]

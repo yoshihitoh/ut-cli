@@ -1,9 +1,11 @@
-use chrono::prelude::*;
 use clap::{App, Arg, SubCommand};
 
-use crate::argv::{
-    DeltaArgv, HmsArgv, PrecisionArgv, PresetArgv, TimeUnitArgv, ValidateArgv, YmdArgv,
-};
+use crate::datetime::{Hms, HmsError, Ymd, YmdError};
+use crate::delta::{DeltaItem, DeltaItemError};
+use crate::precision::Precision;
+use crate::preset::Preset;
+use crate::unit::TimeUnit;
+use crate::validate::{validate_argv, IntoValidationError};
 
 pub fn command(name: &str) -> App<'static, 'static> {
     SubCommand::with_name(name)
@@ -16,7 +18,11 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .short("b")
                 .long("base")
                 .takes_value(true)
-                .validator(PresetArgv::validate_argv)
+                .validator(|s| {
+                    Preset::find_by_name(&s)
+                        .map(|_| ())
+                        .map_err(|e| e.into_validation_error())
+                })
                 .conflicts_with("YMD"),
         )
         .arg(
@@ -25,7 +31,7 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .help("Set the DATE in yyyyMMdd format.")
                 .long("ymd")
                 .takes_value(true)
-                .validator(YmdArgv::<Utc>::validate_argv)
+                .validator(|s| validate_argv::<Ymd, YmdError>(&s))
                 .conflicts_with("BASE"),
         )
         .arg(
@@ -34,7 +40,7 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .help("Set the TIME in HHmmss format.")
                 .long("hms")
                 .takes_value(true)
-                .validator(HmsArgv::validate_argv),
+                .validator(|s| validate_argv::<Hms, HmsError>(&s)),
         )
         .arg(
             Arg::with_name("TRUNCATE")
@@ -44,7 +50,11 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .short("t")
                 .long("truncate")
                 .takes_value(true)
-                .validator(TimeUnitArgv::validate_argv),
+                .validator(|s| {
+                    TimeUnit::find_by_name(&s)
+                        .map(|_| ())
+                        .map_err(|e| e.into_validation_error())
+                }),
         )
         .arg(
             Arg::with_name("DELTA")
@@ -57,14 +67,13 @@ Example:
 ",
                 )
                 .next_line_help(true)
-                // TODO: long helpに使用例を追加
                 .short("d")
                 .long("delta")
                 .takes_value(true)
                 .allow_hyphen_values(true)
                 .multiple(true)
                 .number_of_values(1)
-                .validator(DeltaArgv::validate_argv),
+                .validator(|s| validate_argv::<DeltaItem, DeltaItemError>(&s)),
         )
         .arg(
             Arg::with_name("PRECISION")
@@ -73,6 +82,10 @@ Example:
                 .short("p")
                 .long("precision")
                 .takes_value(true)
-                .validator(PrecisionArgv::validate_argv),
+                .validator(|s| {
+                    Precision::find_by_name(&s)
+                        .map(|_| ())
+                        .map_err(|e| e.into_validation_error())
+                }),
         )
 }
