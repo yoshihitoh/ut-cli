@@ -1,5 +1,4 @@
-use chrono::{DateTime, Datelike, TimeZone};
-use time::Duration;
+use chrono::{DateTime, Datelike, Duration, TimeZone};
 
 pub trait ApplyDateTime<Tz: TimeZone> {
     fn apply_datetime(&self, dt: DateTime<Tz>) -> Option<DateTime<Tz>>;
