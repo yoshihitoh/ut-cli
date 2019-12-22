@@ -1,29 +1,35 @@
-mod argv;
 mod cmd;
 mod config;
+mod datetime;
 mod delta;
 mod error;
 mod find;
+mod offset;
+mod parse;
 mod precision;
 mod preset;
 mod provider;
 mod timedelta;
 mod unit;
+mod validate;
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
-use chrono::{Local, Offset, TimeZone, Utc};
+use chrono::{Local, TimeZone, Utc};
 use clap::{
     crate_authors, crate_description, crate_name, crate_version, App, AppSettings, Arg, ArgMatches,
 };
 
-use crate::argv::{OffsetArgv, ParseArgv, PrecisionArgv, ValidateArgv};
 use crate::config::Config;
-use crate::error::UtError;
+use crate::error::{UtError, UtErrorKind};
+use crate::offset::{Offset, OffsetError};
 use crate::precision::Precision;
 use crate::provider::{
     DateTimeProvider, FixedOffsetProvider, FromTimeZone, LocalProvider, UtcProvider,
 };
+use crate::validate::{validate_argv, IntoValidationError};
+use failure::ResultExt;
+use std::str::FromStr;
 
 fn app() -> App<'static, 'static> {
     App::new(crate_name!())
@@ -51,7 +57,7 @@ fn app() -> App<'static, 'static> {
                 .long("offset")
                 .takes_value(true)
                 .allow_hyphen_values(true)
-                .validator(OffsetArgv::validate_argv),
+                .validator(|s| validate_argv::<Offset, OffsetError>(&s)),
         )
         .arg(
             Arg::with_name("PRECISION")
@@ -60,7 +66,11 @@ fn app() -> App<'static, 'static> {
                 .short("p")
                 .long("precision")
                 .takes_value(true)
-                .validator(PrecisionArgv::validate_argv),
+                .validator(|s| {
+                    Precision::find_by_name(&s)
+                        .map(|_| ())
+                        .map_err(|e| e.into_validation_error())
+                }),
         )
 }
 
@@ -72,18 +82,20 @@ fn run() -> Result<(), UtError> {
     let app = app();
     let config = config();
     let main_matches = app.get_matches();
-    let precision = PrecisionArgv::default().parse_argv(
-        main_matches
-            .value_of("PRECISION")
-            .or_else(|| config.precision())
-            .unwrap_or("second"),
-    )?;
+    let precision = main_matches
+        .value_of("PRECISION")
+        .or_else(|| config.precision())
+        .map(|s| Precision::find_by_name(s))
+        .unwrap_or_else(|| Ok(Precision::Second))
+        .context(UtErrorKind::PrecisionError)?;
 
     if main_matches.is_present("UTC") {
         let provider: UtcProvider = UtcProvider::from_timezone(Utc);
         run_with(&main_matches, provider, precision)
     } else if let Some(offset_text) = main_matches.value_of("OFFSET").or_else(|| config.offset()) {
-        let offset = OffsetArgv::default().parse_argv(offset_text)?;
+        let offset = Offset::from_str(offset_text)
+            .context(UtErrorKind::WrongTimeOffset)?
+            .into();
         let provider: FixedOffsetProvider = FixedOffsetProvider::from_timezone(offset);
         run_with(&main_matches, provider, precision)
     } else {
@@ -98,8 +110,8 @@ fn run_with<O, Tz, P>(
     precision: Precision,
 ) -> Result<(), UtError>
 where
-    O: Offset + Display + Sized,
-    Tz: TimeZone<Offset = O>,
+    O: chrono::Offset + Display + Sized,
+    Tz: TimeZone<Offset = O> + Debug,
     P: DateTimeProvider<Tz>,
 {
     match main_matches.subcommand() {

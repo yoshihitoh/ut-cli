@@ -1,14 +1,37 @@
 use chrono::{DateTime, Datelike, TimeZone, Timelike};
+use failure::Fail;
 use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 
 use crate::find::{enum_names, find_enum_item, FindError};
+use crate::validate::IntoValidationError;
 
 lazy_static! {
     static ref PRESET_NAMES: Vec<String> = enum_names(TimeUnit::iter());
     static ref POSSIBLE_VALUES: Vec<&'static str> =
         PRESET_NAMES.iter().map(|s| s.as_str()).collect();
+}
+
+#[derive(Fail, Debug, PartialEq)]
+pub enum TimeUnitError {
+    #[fail(display = "Wrong unit. error:{}", _0)]
+    WrongName(FindError),
+}
+
+impl IntoValidationError for TimeUnitError {
+    fn into_validation_error(self) -> String {
+        use TimeUnitError::*;
+        match &self {
+            WrongName(e) => match e {
+                FindError::NotFound => {
+                    let names = TimeUnit::possible_names();
+                    format!("{} possible names: [{}]", self, names.join(", "))
+                }
+                FindError::Ambiguous(_) => format!("{}", self),
+            },
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, EnumIter, EnumString, Display)]
@@ -36,8 +59,8 @@ pub enum TimeUnit {
 }
 
 impl TimeUnit {
-    pub fn find_by_name(name: &str) -> Result<TimeUnit, FindError> {
-        find_enum_item(&name.to_ascii_lowercase())
+    pub fn find_by_name(name: &str) -> Result<TimeUnit, TimeUnitError> {
+        find_enum_item(&name.to_ascii_lowercase()).map_err(TimeUnitError::WrongName)
     }
 
     pub fn possible_names() -> Vec<String> {
@@ -69,7 +92,7 @@ impl TimeUnit {
 #[cfg(test)]
 mod find_tests {
     use crate::find::FindError;
-    use crate::unit::TimeUnit;
+    use crate::unit::{TimeUnit, TimeUnitError};
 
     #[test]
     fn find_by_name_year() {
@@ -85,11 +108,11 @@ mod find_tests {
 
         assert_eq!(
             TimeUnit::find_by_name("m"),
-            Err(FindError::Ambiguous(vec![
+            Err(TimeUnitError::WrongName(FindError::Ambiguous(vec![
                 "month".to_string(),
                 "minute".to_string(),
                 "millisecond".to_string()
-            ]))
+            ])))
         );
     }
 
@@ -112,10 +135,10 @@ mod find_tests {
 
         assert_eq!(
             TimeUnit::find_by_name("mi"),
-            Err(FindError::Ambiguous(vec![
+            Err(TimeUnitError::WrongName(FindError::Ambiguous(vec![
                 "minute".to_string(),
                 "millisecond".to_string()
-            ]))
+            ])))
         );
     }
 
@@ -137,7 +160,10 @@ mod find_tests {
 
     #[test]
     fn find_by_name_not_supported() {
-        assert_eq!(TimeUnit::find_by_name("b"), Err(FindError::NotFound));
+        assert_eq!(
+            TimeUnit::find_by_name("b"),
+            Err(TimeUnitError::WrongName(FindError::NotFound))
+        );
     }
 }
 
