@@ -1,4 +1,5 @@
 use failure::Fail;
+use std::str::FromStr;
 
 #[derive(Fail, Debug, PartialEq)]
 pub enum FindError {
@@ -14,7 +15,10 @@ where
     E: ToString + Copy,
     I: Iterator<Item = E>,
 {
-    items.filter(|x| x.to_string().starts_with(name)).collect()
+    let name = name.to_ascii_lowercase();
+    items
+        .filter(|x| x.to_string().to_ascii_lowercase().starts_with(&name))
+        .collect()
 }
 
 fn find_by_name<T, I>(items: I, name: &str) -> Result<T, FindError>
@@ -22,7 +26,7 @@ where
     T: Copy + ToString,
     I: Iterator<Item = T>,
 {
-    let found = find_items(items, name);
+    let found = find_items(items, &name);
     if found.len() == 1 {
         Ok(*found.first().unwrap())
     } else if found.is_empty() {
@@ -41,15 +45,18 @@ pub trait PossibleValues: Copy {
 
 pub trait PossibleNames: PossibleValues + ToString {
     fn possible_names() -> Vec<String> {
-        Self::possible_values().map(|x| x.to_string()).collect()
+        Self::possible_values()
+            .map(|x| x.to_string().to_ascii_lowercase())
+            .collect()
     }
 }
 
-pub trait FindByName: PossibleValues + ToString {
+pub trait FindByName: PossibleValues + ToString + FromStr {
     type Error: From<FindError>;
 
     fn find_by_name(name: &str) -> Result<Self, Self::Error> {
-        Ok(find_by_name(Self::possible_values(), name)?)
+        Self::from_str(name)
+            .or_else(|_| find_by_name(Self::possible_values(), name).map_err(Self::Error::from))
     }
 
     fn find_by_name_opt(maybe_name: Option<&str>) -> Result<Option<Self>, Self::Error> {
