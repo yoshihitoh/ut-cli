@@ -6,7 +6,7 @@ use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 
-use crate::find::{enum_names, FindByName, FindError, PossibleValues};
+use crate::find::{enum_names, FindByName, FindError, PossibleNames, PossibleValues};
 use crate::provider::DateTimeProvider;
 use crate::validate::IntoValidationError;
 
@@ -56,10 +56,6 @@ lazy_static! {
 }
 
 impl Preset {
-    pub fn possible_names() -> Vec<String> {
-        Preset::iter().map(|p| p.to_string()).collect()
-    }
-
     pub fn as_date<P, Tz>(self, provider: &P) -> Date<Tz>
     where
         P: DateTimeProvider<Tz>,
@@ -80,6 +76,8 @@ impl PossibleValues for Preset {
         Preset::iter()
     }
 }
+
+impl PossibleNames for Preset {}
 
 impl FindByName for Preset {
     type Error = PresetError;

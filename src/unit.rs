@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 
-use crate::find::{enum_names, FindByName, FindError, PossibleValues};
+use crate::find::{enum_names, FindByName, FindError, PossibleNames, PossibleValues};
 use crate::validate::IntoValidationError;
 
 lazy_static! {
@@ -65,10 +65,6 @@ pub enum TimeUnit {
 }
 
 impl TimeUnit {
-    pub fn possible_names() -> Vec<String> {
-        TimeUnit::iter().map(|t| t.to_string()).collect()
-    }
-
     pub fn truncate<Tz: TimeZone>(self, dt: DateTime<Tz>) -> DateTime<Tz> {
         let d = match self {
             TimeUnit::Year => dt.date().with_month(1).unwrap().with_day(1).unwrap(),
@@ -98,6 +94,8 @@ impl PossibleValues for TimeUnit {
         TimeUnit::iter()
     }
 }
+
+impl PossibleNames for TimeUnit {}
 
 impl FindByName for TimeUnit {
     type Error = TimeUnitError;

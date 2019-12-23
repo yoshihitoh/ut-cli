@@ -9,7 +9,7 @@ pub enum FindError {
     Ambiguous(Vec<String>),
 }
 
-pub fn find_items<E, I>(items: I, name: &str) -> Vec<E>
+fn find_items<E, I>(items: I, name: &str) -> Vec<E>
 where
     E: ToString + Copy,
     I: Iterator<Item = E>,
@@ -33,13 +33,19 @@ where
     }
 }
 
-pub trait PossibleValues: ToString + Copy {
+pub trait PossibleValues: Copy {
     type Iterator: Iterator<Item = Self>;
 
     fn possible_values() -> Self::Iterator;
 }
 
-pub trait FindByName: PossibleValues {
+pub trait PossibleNames: PossibleValues + ToString {
+    fn possible_names() -> Vec<String> {
+        Self::possible_values().map(|x| x.to_string()).collect()
+    }
+}
+
+pub trait FindByName: PossibleValues + ToString {
     type Error: From<FindError>;
 
     fn find_by_name(name: &str) -> Result<Self, Self::Error> {
