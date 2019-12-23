@@ -1,5 +1,6 @@
-use failure::Fail;
 use std::str::FromStr;
+
+use failure::Fail;
 
 #[derive(Fail, Debug, PartialEq)]
 pub enum FindError {

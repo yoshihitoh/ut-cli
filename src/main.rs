@@ -14,11 +14,13 @@ mod unit;
 mod validate;
 
 use std::fmt::{Debug, Display};
+use std::str::FromStr;
 
 use chrono::{Local, TimeZone, Utc};
 use clap::{
     crate_authors, crate_description, crate_name, crate_version, App, AppSettings, Arg, ArgMatches,
 };
+use failure::ResultExt;
 
 use crate::config::Config;
 use crate::error::{UtError, UtErrorKind};
@@ -29,8 +31,6 @@ use crate::provider::{
     DateTimeProvider, FixedOffsetProvider, FromTimeZone, LocalProvider, UtcProvider,
 };
 use crate::validate::{validate_argv, validate_argv_by_name};
-use failure::ResultExt;
-use std::str::FromStr;
 
 fn app() -> App<'static, 'static> {
     App::new(crate_name!())

@@ -1,5 +1,6 @@
-use crate::find::{FindByName, FindError};
 use std::str::FromStr;
+
+use crate::find::{FindByName, FindError};
 
 pub fn validate_number<T: PartialOrd, E, F: Fn() -> E>(
     n: T,
