@@ -1,22 +1,21 @@
 use chrono::{DateTime, Datelike, TimeZone, Timelike};
 use failure::Fail;
-use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 
-use crate::find::{enum_names, find_enum_item, FindError};
+use crate::find::{FindByName, FindError, PossibleNames, PossibleValues};
 use crate::validate::IntoValidationError;
-
-lazy_static! {
-    static ref PRESET_NAMES: Vec<String> = enum_names(TimeUnit::iter());
-    static ref POSSIBLE_VALUES: Vec<&'static str> =
-        PRESET_NAMES.iter().map(|s| s.as_str()).collect();
-}
 
 #[derive(Fail, Debug, PartialEq)]
 pub enum TimeUnitError {
     #[fail(display = "Wrong unit. error:{}", _0)]
     WrongName(FindError),
+}
+
+impl From<FindError> for TimeUnitError {
+    fn from(e: FindError) -> Self {
+        TimeUnitError::WrongName(e)
+    }
 }
 
 impl IntoValidationError for TimeUnitError {
@@ -59,14 +58,6 @@ pub enum TimeUnit {
 }
 
 impl TimeUnit {
-    pub fn find_by_name(name: &str) -> Result<TimeUnit, TimeUnitError> {
-        find_enum_item(&name.to_ascii_lowercase()).map_err(TimeUnitError::WrongName)
-    }
-
-    pub fn possible_names() -> Vec<String> {
-        TimeUnit::iter().map(|t| t.to_string()).collect()
-    }
-
     pub fn truncate<Tz: TimeZone>(self, dt: DateTime<Tz>) -> DateTime<Tz> {
         let d = match self {
             TimeUnit::Year => dt.date().with_month(1).unwrap().with_day(1).unwrap(),
@@ -89,9 +80,23 @@ impl TimeUnit {
     }
 }
 
+impl PossibleValues for TimeUnit {
+    type Iterator = TimeUnitIter;
+
+    fn possible_values() -> Self::Iterator {
+        TimeUnit::iter()
+    }
+}
+
+impl PossibleNames for TimeUnit {}
+
+impl FindByName for TimeUnit {
+    type Error = TimeUnitError;
+}
+
 #[cfg(test)]
 mod find_tests {
-    use crate::find::FindError;
+    use crate::find::{FindByName, FindError};
     use crate::unit::{TimeUnit, TimeUnitError};
 
     #[test]

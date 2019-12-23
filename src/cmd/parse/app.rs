@@ -1,3 +1,4 @@
+use crate::find::FindByName;
 use crate::precision::Precision;
 use crate::validate::IntoValidationError;
 use clap::{App, AppSettings, Arg, SubCommand};

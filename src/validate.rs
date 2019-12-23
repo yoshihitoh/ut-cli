@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use crate::find::{FindByName, FindError};
+
 pub fn validate_number<T: PartialOrd, E, F: Fn() -> E>(
     n: T,
     min: T,
@@ -17,12 +19,22 @@ pub trait IntoValidationError {
     fn into_validation_error(self) -> String;
 }
 
-pub fn validate_argv<T, E>(s: &str) -> Result<(), String>
+pub fn validate_argv<T, E>(s: String) -> Result<(), String>
 where
     T: FromStr<Err = E>,
     E: IntoValidationError,
 {
-    T::from_str(s)
+    T::from_str(s.as_ref())
+        .map(|_| ())
+        .map_err(|e| e.into_validation_error())
+}
+
+pub fn validate_argv_by_name<T, E>(s: String) -> Result<(), String>
+where
+    T: FindByName<Error = E>,
+    E: From<FindError> + IntoValidationError + IntoValidationError,
+{
+    T::find_by_name(s.as_ref())
         .map(|_| ())
         .map_err(|e| e.into_validation_error())
 }

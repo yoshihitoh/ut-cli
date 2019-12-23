@@ -1,8 +1,6 @@
-use std::fmt::Display;
 use std::str::FromStr;
 
 use failure::Fail;
-use strum::IntoEnumIterator;
 
 #[derive(Fail, Debug, PartialEq)]
 pub enum FindError {
@@ -13,36 +11,58 @@ pub enum FindError {
     Ambiguous(Vec<String>),
 }
 
-pub fn find_items<E, I>(items: I, name: &str) -> Vec<E>
+fn find_items<E, I>(items: I, name: &str) -> Vec<E>
 where
     E: ToString + Copy,
     I: Iterator<Item = E>,
 {
-    items.filter(|x| x.to_string().starts_with(name)).collect()
+    let name = name.to_ascii_lowercase();
+    items
+        .filter(|x| x.to_string().to_ascii_lowercase().starts_with(&name))
+        .collect()
 }
 
-pub fn find_enum_item<E, I>(name: &str) -> Result<E, FindError>
+fn find_by_name<T, I>(items: I, name: &str) -> Result<T, FindError>
 where
-    E: IntoEnumIterator<Iterator = I> + FromStr + Copy + Display,
-    I: Iterator<Item = E>,
+    T: Copy + ToString,
+    I: Iterator<Item = T>,
 {
-    E::from_str(name).map(Ok).unwrap_or_else(|_| {
-        let items = find_items(E::iter(), name);
-        if items.len() == 1 {
-            Ok(*items.first().unwrap())
-        } else if items.is_empty() {
-            Err(FindError::NotFound)
-        } else {
-            let names = items.into_iter().map(|x| x.to_string()).collect();
-            Err(FindError::Ambiguous(names))
-        }
-    })
+    let found = find_items(items, &name);
+    if found.len() == 1 {
+        Ok(*found.first().unwrap())
+    } else if found.is_empty() {
+        Err(FindError::NotFound)
+    } else {
+        let names = found.into_iter().map(|x| x.to_string()).collect();
+        Err(FindError::Ambiguous(names))
+    }
 }
 
-pub fn enum_names<E, I>(items: I) -> Vec<String>
-where
-    E: ToString,
-    I: Iterator<Item = E>,
-{
-    items.map(|x| x.to_string()).collect()
+pub trait PossibleValues: Copy {
+    type Iterator: Iterator<Item = Self>;
+
+    fn possible_values() -> Self::Iterator;
+}
+
+pub trait PossibleNames: PossibleValues + ToString {
+    fn possible_names() -> Vec<String> {
+        Self::possible_values()
+            .map(|x| x.to_string().to_ascii_lowercase())
+            .collect()
+    }
+}
+
+pub trait FindByName: PossibleValues + ToString + FromStr {
+    type Error: From<FindError>;
+
+    fn find_by_name(name: &str) -> Result<Self, Self::Error> {
+        Self::from_str(name)
+            .or_else(|_| find_by_name(Self::possible_values(), name).map_err(Self::Error::from))
+    }
+
+    fn find_by_name_opt(maybe_name: Option<&str>) -> Result<Option<Self>, Self::Error> {
+        maybe_name
+            .map(move |s| Self::find_by_name(s).map(Some))
+            .unwrap_or_else(|| Ok(None))
+    }
 }

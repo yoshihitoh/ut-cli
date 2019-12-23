@@ -3,6 +3,7 @@ use std::str::FromStr;
 use failure::Fail;
 use regex::Regex;
 
+use crate::find::FindByName;
 use crate::timedelta::TimeDeltaBuilder;
 use crate::unit::{TimeUnit, TimeUnitError};
 use crate::validate::IntoValidationError;

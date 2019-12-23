@@ -1,4 +1,5 @@
 use std::fmt::Debug;
+use std::str::FromStr;
 
 use chrono::prelude::*;
 use clap::{ArgMatches, Values};
@@ -7,45 +8,33 @@ use failure::ResultExt;
 use crate::datetime::{Hms, HmsError, Ymd, YmdError};
 use crate::delta::DeltaItem;
 use crate::error::{UtError, UtErrorKind};
+use crate::find::FindByName;
 use crate::parse::parse_argv_opt;
 use crate::precision::Precision;
 use crate::preset::Preset;
 use crate::provider::DateTimeProvider;
 use crate::timedelta::{ApplyDateTime, TimeDeltaBuilder};
 use crate::unit::TimeUnit;
-use std::str::FromStr;
 
 pub fn run<Tz, P>(m: &ArgMatches, provider: P, precision: Precision) -> Result<(), UtError>
 where
     Tz: TimeZone + Debug,
     P: DateTimeProvider<Tz>,
 {
-    let maybe_preset = m
-        .value_of("BASE")
-        .map(|s| Preset::find_by_name(s).map(Some))
-        .unwrap_or_else(|| Ok(None))
-        .context(UtErrorKind::PresetError)?;
-
+    let maybe_preset =
+        Preset::find_by_name_opt(m.value_of("BASE")).context(UtErrorKind::PresetError)?;
     let maybe_ymd =
         parse_argv_opt::<Ymd, YmdError>(m.value_of("YMD")).context(UtErrorKind::WrongDate)?;
     let maybe_hms =
         parse_argv_opt::<Hms, HmsError>(m.value_of("HMS")).context(UtErrorKind::WrongTime)?;
-
-    let maybe_truncate = m
-        .value_of("TRUNCATE")
-        .map(|s| TimeUnit::find_by_name(s).map(Some))
-        .unwrap_or_else(|| Ok(None))
-        .context(UtErrorKind::TimeUnitError)?;
+    let maybe_truncate =
+        TimeUnit::find_by_name_opt(m.value_of("TRUNCATE")).context(UtErrorKind::TimeUnitError)?;
 
     let base = create_base_date(provider, maybe_preset, maybe_ymd, maybe_hms, maybe_truncate)?;
     let deltas = create_deltas(m.values_of("DELTA"))?;
 
-    let maybe_precision = m
-        .value_of("PRECISION")
-        .map(|s| Precision::find_by_name(s).map(Some))
-        .unwrap_or_else(|| Ok(None))
+    let maybe_precision = Precision::find_by_name_opt(m.value_of("PRECISION"))
         .context(UtErrorKind::PrecisionError)?;
-
     if maybe_precision.is_some() {
         eprintln!("-p PRECISION option is deprecated.");
     }

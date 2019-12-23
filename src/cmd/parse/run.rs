@@ -2,11 +2,12 @@ use std::fmt::{Debug, Display};
 
 use chrono::{Offset, TimeZone};
 use clap::ArgMatches;
+use failure::ResultExt;
 
 use crate::error::{UtError, UtErrorKind};
+use crate::find::FindByName;
 use crate::precision::Precision;
 use crate::provider::DateTimeProvider;
-use failure::ResultExt;
 
 pub fn run<O, Tz, P>(m: &ArgMatches, provider: P, precision: Precision) -> Result<(), UtError>
 where
@@ -22,10 +23,7 @@ where
         .context(UtErrorKind::WrongTimestamp)?
         .unwrap();
 
-    let maybe_precision = m
-        .value_of("PRECISION")
-        .map(|s| Precision::find_by_name(s).map(Some))
-        .unwrap_or_else(|| Ok(None))
+    let maybe_precision = Precision::find_by_name_opt(m.value_of("PRECISION"))
         .context(UtErrorKind::PrecisionError)?;
     if maybe_precision.is_some() {
         eprintln!("-p PRECISION option is deprecated.");
