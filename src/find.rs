@@ -65,11 +65,3 @@ pub trait FindByName: PossibleValues + ToString + FromStr {
             .unwrap_or_else(|| Ok(None))
     }
 }
-
-pub fn enum_names<E, I>(items: I) -> Vec<String>
-where
-    E: ToString,
-    I: Iterator<Item = E>,
-{
-    items.map(|x| x.to_string()).collect()
-}

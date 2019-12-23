@@ -2,11 +2,10 @@ use std::fmt::Debug;
 
 use chrono::{Date, TimeZone};
 use failure::Fail;
-use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 
-use crate::find::{enum_names, FindByName, FindError, PossibleNames, PossibleValues};
+use crate::find::{FindByName, FindError, PossibleNames, PossibleValues};
 use crate::provider::DateTimeProvider;
 use crate::validate::IntoValidationError;
 
@@ -47,12 +46,6 @@ pub enum Preset {
 
     #[strum(serialize = "yesterday")]
     Yesterday,
-}
-
-lazy_static! {
-    static ref PRESET_NAMES: Vec<String> = enum_names(Preset::iter());
-    static ref POSSIBLE_VALUES: Vec<&'static str> =
-        PRESET_NAMES.iter().map(|s| s.as_str()).collect();
 }
 
 impl Preset {

@@ -1,17 +1,10 @@
 use chrono::{DateTime, Datelike, TimeZone, Timelike};
 use failure::Fail;
-use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 
-use crate::find::{enum_names, FindByName, FindError, PossibleNames, PossibleValues};
+use crate::find::{FindByName, FindError, PossibleNames, PossibleValues};
 use crate::validate::IntoValidationError;
-
-lazy_static! {
-    static ref PRESET_NAMES: Vec<String> = enum_names(TimeUnit::iter());
-    static ref POSSIBLE_VALUES: Vec<&'static str> =
-        PRESET_NAMES.iter().map(|s| s.as_str()).collect();
-}
 
 #[derive(Fail, Debug, PartialEq)]
 pub enum TimeUnitError {
