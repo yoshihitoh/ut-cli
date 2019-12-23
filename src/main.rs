@@ -22,12 +22,13 @@ use clap::{
 
 use crate::config::Config;
 use crate::error::{UtError, UtErrorKind};
+use crate::find::FindByName;
 use crate::offset::{Offset, OffsetError};
-use crate::precision::Precision;
+use crate::precision::{Precision, PrecisionError};
 use crate::provider::{
     DateTimeProvider, FixedOffsetProvider, FromTimeZone, LocalProvider, UtcProvider,
 };
-use crate::validate::{validate_argv, IntoValidationError};
+use crate::validate::{validate_argv, validate_argv_by_name};
 use failure::ResultExt;
 use std::str::FromStr;
 
@@ -57,7 +58,7 @@ fn app() -> App<'static, 'static> {
                 .long("offset")
                 .takes_value(true)
                 .allow_hyphen_values(true)
-                .validator(|s| validate_argv::<Offset, OffsetError>(&s)),
+                .validator(validate_argv::<Offset, OffsetError>),
         )
         .arg(
             Arg::with_name("PRECISION")
@@ -66,11 +67,7 @@ fn app() -> App<'static, 'static> {
                 .short("p")
                 .long("precision")
                 .takes_value(true)
-                .validator(|s| {
-                    Precision::find_by_name(&s)
-                        .map(|_| ())
-                        .map_err(|e| e.into_validation_error())
-                }),
+                .validator(validate_argv_by_name::<Precision, PrecisionError>),
         )
 }
 
@@ -82,12 +79,12 @@ fn run() -> Result<(), UtError> {
     let app = app();
     let config = config();
     let main_matches = app.get_matches();
-    let precision = main_matches
+    let maybe_precision = main_matches
         .value_of("PRECISION")
-        .or_else(|| config.precision())
-        .map(|s| Precision::find_by_name(s))
-        .unwrap_or_else(|| Ok(Precision::Second))
-        .context(UtErrorKind::PrecisionError)?;
+        .or_else(|| config.precision());
+    let precision = Precision::find_by_name_opt(maybe_precision)
+        .context(UtErrorKind::PrecisionError)?
+        .unwrap_or_else(|| Precision::Second);
 
     if main_matches.is_present("UTC") {
         let provider: UtcProvider = UtcProvider::from_timezone(Utc);

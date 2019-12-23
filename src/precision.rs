@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 
-use crate::find::{enum_names, find_enum_item, FindError};
+use crate::find::{enum_names, FindByName, FindError, PossibleValues};
 use crate::validate::IntoValidationError;
 
 lazy_static! {
@@ -17,6 +17,12 @@ lazy_static! {
 pub enum PrecisionError {
     #[fail(display = "Wrong precision. error:{}", _0)]
     WrongName(FindError),
+}
+
+impl From<FindError> for PrecisionError {
+    fn from(e: FindError) -> Self {
+        PrecisionError::WrongName(e)
+    }
 }
 
 impl IntoValidationError for PrecisionError {
@@ -44,10 +50,6 @@ pub enum Precision {
 }
 
 impl Precision {
-    pub fn find_by_name(name: &str) -> Result<Precision, PrecisionError> {
-        find_enum_item(&name.to_ascii_lowercase()).map_err(PrecisionError::WrongName)
-    }
-
     pub fn possible_names() -> Vec<String> {
         Precision::iter().map(|p| p.to_string()).collect()
     }
@@ -74,12 +76,24 @@ impl Precision {
     }
 }
 
+impl PossibleValues for Precision {
+    type Iterator = PrecisionIter;
+
+    fn possible_values() -> Self::Iterator {
+        Precision::iter()
+    }
+}
+
+impl FindByName for Precision {
+    type Error = PrecisionError;
+}
+
 #[cfg(test)]
 mod tests {
     use chrono::offset::TimeZone;
     use chrono::Utc;
 
-    use crate::find::FindError;
+    use crate::find::{FindByName, FindError};
     use crate::precision::{Precision, PrecisionError};
 
     #[test]

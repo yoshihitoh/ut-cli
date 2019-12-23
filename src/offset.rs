@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn validate() {
-        let validate_argv = |s: &str| validate_argv::<Offset, OffsetError>(s);
+        let validate_argv = |s: &str| validate_argv::<Offset, OffsetError>(s.to_string());
 
         assert!(validate_argv("0000").is_ok());
         assert!(validate_argv("00:00").is_ok());
