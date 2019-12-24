@@ -1,5 +1,10 @@
 language: rust
-cache: cargo
+cache:
+  directories:
+    - $HOME/.cargo
+    - $HOME/.rustup
+before_cache:
+  - rm -rf /home/travis/.cargo/registry
 env:
   global:
     - PROJECT_NAME: ut-cli
