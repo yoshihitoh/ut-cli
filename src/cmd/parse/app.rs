@@ -6,7 +6,7 @@ use clap::{App, AppSettings, Arg, SubCommand};
 pub fn command(name: &str) -> App<'static, 'static> {
     SubCommand::with_name(name)
         .about("Parse a unix timestamp and print it in human readable format.")
-        .settings(&[AppSettings::AllowLeadingHyphen])
+        .settings(&[AppSettings::AllowNegativeNumbers, AppSettings::ColoredHelp])
         .arg(
             Arg::with_name("TIMESTAMP")
                 .help("Set a timestamp to parse.")

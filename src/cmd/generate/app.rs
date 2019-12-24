@@ -1,4 +1,4 @@
-use clap::{App, Arg, SubCommand};
+use clap::{App, AppSettings, Arg, SubCommand};
 
 use crate::datetime::{Hms, HmsError, Ymd, YmdError};
 use crate::delta::{DeltaItem, DeltaItemError};
@@ -10,6 +10,7 @@ use crate::validate::{validate_argv, validate_argv_by_name};
 pub fn command(name: &str) -> App<'static, 'static> {
     SubCommand::with_name(name)
         .about("Generate unix timestamp with given options.")
+        .settings(&[AppSettings::AllowNegativeNumbers, AppSettings::ColoredHelp])
         .arg(
             Arg::with_name("BASE")
                 .value_name("DATE")
@@ -19,7 +20,14 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .long("base")
                 .takes_value(true)
                 .validator(validate_argv_by_name::<Preset, PresetError>)
-                .conflicts_with("YMD"),
+                .conflicts_with_all(&["BASE_TIMESTAMP", "YMD"]),
+        )
+        .arg(
+            Arg::with_name("BASE_TIMESTAMP")
+                .help("Set a base timestamp.")
+                .validator(|s| s.parse::<i64>().map(|_| ()).map_err(|e| format!("{:?}", e)))
+                .allow_hyphen_values(true)
+                .conflicts_with_all(&["BASE", "YMD", "HMS"]),
         )
         .arg(
             Arg::with_name("YMD")
@@ -27,8 +35,7 @@ pub fn command(name: &str) -> App<'static, 'static> {
                 .help("Set the DATE in yyyyMMdd format.")
                 .long("ymd")
                 .takes_value(true)
-                .validator(validate_argv::<Ymd, YmdError>)
-                .conflicts_with("BASE"),
+                .validator(validate_argv::<Ymd, YmdError>),
         )
         .arg(
             Arg::with_name("HMS")

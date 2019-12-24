@@ -44,7 +44,7 @@ $ git clone https://github.com/yoshihitoh/ut-cli
 $ cd ut-cli
 $ cargo build --release
 $ ./target/release/ut --version
-ut 0.1.5
+ut 0.1.6
 ```
 
 Also there are pre-built binary for Linux and macOS.
@@ -52,7 +52,7 @@ See [releases](https://github.com/yoshihitoh/ut-cli/releases).
 
 ### Usage
 ``` bash
-ut-cli 0.1.5
+ut-cli 0.1.6
 yoshihitoh <yoshihito.arih@gmail.com>
 A command line tool to handle unix timestamp.
 
@@ -124,6 +124,10 @@ $ ut g -b today -d 3day -d 12hour -d 30minute
 # You can use short name on time unit.
 $ ut g -b today -d 3d -d 12h -d 30min
 1561174200
+
+# You can modify a timestamp with a timestamp argument.
+$ ut g -d 1min 1561174200
+1561174260    # 1min(=60second) difference.
 ```
 
 #### Parse a unix timestamp
