@@ -1,4 +1,5 @@
 use std::fmt::{Debug, Display};
+use std::io;
 
 use chrono::{Offset, TimeZone};
 use clap::ArgMatches;
@@ -8,6 +9,7 @@ use crate::error::{UtError, UtErrorKind};
 use crate::find::FindByName;
 use crate::precision::Precision;
 use crate::provider::DateTimeProvider;
+use crate::read::{read_next, ReadError};
 
 pub fn run<O, Tz, P>(m: &ArgMatches, provider: P, precision: Precision) -> Result<(), UtError>
 where
@@ -31,5 +33,9 @@ where
 fn get_timestamp(maybe_timestamp: Option<&str>) -> Result<i64, UtError> {
     Ok(maybe_timestamp
         .map(|s| s.parse::<i64>().context(UtErrorKind::WrongTimestamp))
-        .unwrap()?)
+        .unwrap_or_else(|| {
+            let stdin = io::stdin();
+            let r: Result<i64, ReadError> = read_next(stdin);
+            r.context(UtErrorKind::WrongTimestamp)
+        })?)
 }

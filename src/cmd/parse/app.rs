@@ -10,7 +10,6 @@ pub fn command(name: &str) -> App<'static, 'static> {
         .arg(
             Arg::with_name("TIMESTAMP")
                 .help("Set a timestamp to parse.")
-                .required(true)
                 .validator(|s| s.parse::<i64>().map(|_| ()).map_err(|e| format!("{:?}", e)))
                 .allow_hyphen_values(true),
         )
