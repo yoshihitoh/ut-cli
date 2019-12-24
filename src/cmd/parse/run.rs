@@ -15,14 +15,7 @@ where
     Tz: TimeZone<Offset = O> + Debug,
     P: DateTimeProvider<Tz>,
 {
-    // TODO: create timestamp type.
-    let timestamp = m
-        .value_of("TIMESTAMP")
-        .map(|s| s.parse::<i64>().map(Some))
-        .unwrap_or_else(|| Ok(None))
-        .context(UtErrorKind::WrongTimestamp)?
-        .unwrap();
-
+    let timestamp = get_timestamp(m.value_of("TIMESTAMP"))?;
     let maybe_precision = Precision::find_by_name_opt(m.value_of("PRECISION"))
         .context(UtErrorKind::PrecisionError)?;
     if maybe_precision.is_some() {
@@ -33,4 +26,10 @@ where
     let dt = precision.parse_timestamp(provider.timezone(), timestamp);
     println!("{}", dt.format(precision.preferred_format()).to_string());
     Ok(())
+}
+
+fn get_timestamp(maybe_timestamp: Option<&str>) -> Result<i64, UtError> {
+    Ok(maybe_timestamp
+        .map(|s| s.parse::<i64>().context(UtErrorKind::WrongTimestamp))
+        .unwrap()?)
 }
