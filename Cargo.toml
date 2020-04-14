@@ -1,6 +1,6 @@
 [package]
 name = "ut-cli"
-version = "0.1.6"
+version = "0.1.7"
 authors = ["yoshihitoh <yoshihito.arih@gmail.com>"]
 categories = ["command-line-utilities"]
 description = "A command line tool to handle unix timestamp."
