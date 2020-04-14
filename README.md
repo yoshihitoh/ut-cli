@@ -4,7 +4,7 @@ ut
 ut is a command line tool to handle a unix timestamp.
 
 [![Latest Version](https://img.shields.io/crates/v/ut-cli.svg)](https://crates.io/crates/ut-cli)
-[![Build Status](https://travis-ci.com/yoshihitoh/ut-cli.svg?branch=master)](https://travis-ci.com/yoshihitoh/ut-cli)
+![ci](https://github.com/yoshihitoh/ut-cli/workflows/ci/badge.svg)
 ![Dependabot](https://api.dependabot.com/badges/status?host=github&repo=yoshihitoh/ut-cli)
 
 ### Motivation
