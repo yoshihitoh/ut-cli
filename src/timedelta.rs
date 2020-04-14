@@ -115,7 +115,7 @@ impl<Tz: TimeZone> ApplyDateTime<Tz> for TimeDelta {
         let result_year = duration_applied.year() + delta_years;
 
         let result_month = if sum_months > 0 {
-            (((sum_months - 1) % 12) + 1)
+            ((sum_months - 1) % 12) + 1
         } else {
             (sum_months % 12) + 12
         } as u32;

@@ -18,11 +18,11 @@ impl Config {
     }
 
     pub fn offset(&self) -> Option<&str> {
-        self.offset.as_ref().map(|s| s.as_str())
+        self.offset.as_deref()
     }
 
     pub fn precision(&self) -> Option<&str> {
-        self.precision.as_ref().map(|s| s.as_str())
+        self.precision.as_deref()
     }
 }
 
