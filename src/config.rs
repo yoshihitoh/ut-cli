@@ -1,8 +1,5 @@
 use std::env;
 
-static OFFSET_KEY: &str = "UT_OFFSET";
-static PRECISION_KEY: &str = "UT_PRECISION";
-
 #[derive(Debug)]
 pub struct Config {
     offset: Option<String>,
@@ -12,8 +9,8 @@ pub struct Config {
 impl Config {
     pub fn from_env() -> Config {
         Config {
-            offset: env::var(OFFSET_KEY).ok(),
-            precision: env::var(PRECISION_KEY).ok(),
+            offset: env::var("UT_OFFSET").ok(),
+            precision: env::var("UT_PRECISION").ok(),
         }
     }
 
