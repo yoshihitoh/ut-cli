@@ -44,15 +44,15 @@ $ git clone https://github.com/yoshihitoh/ut-cli
 $ cd ut-cli
 $ cargo build --release
 $ ./target/release/ut --version
-ut 0.1.6
+ut 0.1.7
 ```
 
-Also there are pre-built binary for Linux and macOS.
+Also there are pre-built binary for Linux, macOS and Windows.
 See [releases](https://github.com/yoshihitoh/ut-cli/releases).
 
 ### Usage
 ``` bash
-ut-cli 0.1.6
+ut-cli 0.1.7
 yoshihitoh <yoshihito.arih@gmail.com>
 A command line tool to handle unix timestamp.
 
