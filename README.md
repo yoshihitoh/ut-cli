@@ -78,18 +78,32 @@ SUBCOMMANDS:
 
 You can set options via envrionment variables.
 
-| name         | equiv option   | example 
-|:------------:|:--------------:|:-----------
-| UT_OFFSET    | -o/--offset    | 09:00
-| UT_PRECISION | -p/--precision | millisecond
+| name               | equiv option   | example 
+|:------------      :|:--------------:|:-----------
+| UT_OFFSET          | -o/--offset    | 09:00
+| UT_PRECISION       | -p/--precision | millisecond
+| UT_DATETIME_FORMAT | -              | %Y-%m-%d %H:%M
+
+UT_DATETIME_FORMAT follows chrono's datetime specifiers.
+See [the document](https://docs.rs/chrono/0.4.11/chrono/format/strftime/index.html) for details.
 
 ```bash
-# set variables
-$ export UT_OFFSET='09:00'
-$ export UT_PRECISION=millisecond
+# Set variables.
+$ export UT_OFFSET='09:00'  # Use JST(+9).
+$ export UT_PRECISION=millisecond  # Use timestamps in milliseconds.
 
-# run command without `-o` and `-p` option
-$ ut p $(ut g)
+# Generate a timestamp.
+$ ut g
+1588059756238
+
+# Parse a timestamp.
+$ echo 1588059756238 | ut p
+2020-04-28 16:42:36.238 (+09:00)
+
+# Change custom format and timezone.
+$ export UT_DATETIME_FORMAT="%m/%d/%Y"
+$ echo 1588059756238 | ut --offset=-7 p
+04/28/2020
 ```
 
 is equivalent to
