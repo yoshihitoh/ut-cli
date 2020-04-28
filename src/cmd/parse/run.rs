@@ -11,22 +11,51 @@ use crate::precision::Precision;
 use crate::provider::DateTimeProvider;
 use crate::read::{read_next, ReadError};
 
-pub fn run<O, Tz, P>(m: &ArgMatches, provider: P, precision: Precision) -> Result<(), UtError>
+#[derive(Debug)]
+pub struct ParseRequest<P> {
+    provider: P,
+    precision: Precision,
+    datetime_format: String,
+    timestamp: i64,
+}
+
+impl<P> ParseRequest<P> {
+    pub fn new(
+        m: &ArgMatches,
+        provider: P,
+        precision: Precision,
+        datetime_format: Option<&str>,
+    ) -> Result<ParseRequest<P>, UtError> {
+        let timestamp = get_timestamp(m.value_of("TIMESTAMP"))?;
+        let maybe_precision = Precision::find_by_name_opt(m.value_of("PRECISION"))
+            .context(UtErrorKind::PrecisionError)?;
+        if maybe_precision.is_some() {
+            eprintln!("-p PRECISION option is deprecated.");
+        }
+        let precision = maybe_precision.unwrap_or(precision);
+        let datetime_format = datetime_format
+            .unwrap_or_else(|| precision.preferred_format())
+            .to_string();
+
+        Ok(ParseRequest {
+            provider,
+            precision,
+            datetime_format,
+            timestamp,
+        })
+    }
+}
+
+pub fn run<O, Tz, P>(request: ParseRequest<P>) -> Result<(), UtError>
 where
     O: Offset + Display + Sized,
     Tz: TimeZone<Offset = O> + Debug,
     P: DateTimeProvider<Tz>,
 {
-    let timestamp = get_timestamp(m.value_of("TIMESTAMP"))?;
-    let maybe_precision = Precision::find_by_name_opt(m.value_of("PRECISION"))
-        .context(UtErrorKind::PrecisionError)?;
-    if maybe_precision.is_some() {
-        eprintln!("-p PRECISION option is deprecated.");
-    }
-    let precision = maybe_precision.unwrap_or(precision);
-
-    let dt = precision.parse_timestamp(provider.timezone(), timestamp);
-    println!("{}", dt.format(precision.preferred_format()).to_string());
+    let dt = request
+        .precision
+        .parse_timestamp(request.provider.timezone(), request.timestamp);
+    println!("{}", dt.format(&request.datetime_format).to_string());
     Ok(())
 }
 
