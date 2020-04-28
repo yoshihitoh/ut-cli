@@ -121,32 +121,47 @@ impl TryFrom<&ArgMatches<'_>> for GenerateOptions {
     }
 }
 
-struct GenerateRequest<Tz: TimeZone> {
+pub struct GenerateRequest<Tz: TimeZone> {
     base: DateTime<Tz>,
     deltas: Vec<DeltaItem>,
     precision: Precision,
 }
 
-pub fn run<Tz, P>(m: &ArgMatches, provider: P, precision: Precision) -> Result<(), UtError>
+impl<Tz> GenerateRequest<Tz>
 where
     Tz: TimeZone + Debug,
-    P: DateTimeProvider<Tz>,
 {
-    let maybe_precision = Precision::find_by_name_opt(m.value_of("PRECISION"))
-        .context(UtErrorKind::PrecisionError)?;
-    if maybe_precision.is_some() {
-        eprintln!("-p PRECISION option is deprecated.");
-    }
-    let precision = maybe_precision.unwrap_or(precision);
+    pub fn new<P>(
+        m: &ArgMatches,
+        provider: P,
+        precision: Precision,
+    ) -> Result<GenerateRequest<Tz>, UtError>
+    where
+        P: DateTimeProvider<Tz>,
+    {
+        let maybe_precision = Precision::find_by_name_opt(m.value_of("PRECISION"))
+            .context(UtErrorKind::PrecisionError)?;
+        if maybe_precision.is_some() {
+            eprintln!("-p PRECISION option is deprecated.");
+        }
+        let precision = maybe_precision.unwrap_or(precision);
 
-    let generate_options = GenerateOptions::try_from(m)?;
-    let base = generate_options.base_datetime(provider, precision)?;
-    let deltas = generate_options.deltas;
-    generate(GenerateRequest {
-        base,
-        deltas,
-        precision,
-    })
+        let generate_options = GenerateOptions::try_from(m)?;
+        let base = generate_options.base_datetime(provider, precision)?;
+        let deltas = generate_options.deltas;
+        Ok(GenerateRequest {
+            base,
+            deltas,
+            precision,
+        })
+    }
+}
+
+pub fn run<Tz>(request: GenerateRequest<Tz>) -> Result<(), UtError>
+where
+    Tz: TimeZone + Debug,
+{
+    generate(request)
 }
 
 fn generate<Tz: TimeZone>(request: GenerateRequest<Tz>) -> Result<(), UtError> {

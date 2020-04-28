@@ -23,6 +23,7 @@ use clap::{
 };
 use failure::ResultExt;
 
+use crate::cmd::generate::GenerateRequest;
 use crate::config::Config;
 use crate::error::{UtError, UtErrorKind};
 use crate::find::FindByName;
@@ -114,15 +115,17 @@ where
     P: DateTimeProvider<Tz>,
 {
     match main_matches.subcommand() {
-        ("generate", generate_matches) => {
-            cmd::generate::run(generate_matches.unwrap(), provider, precision)
-        }
-        ("parse", parse_matches) => cmd::parse::run(
+        ("generate", generate_matches) => cmd::generate::run(GenerateRequest::new(
+            generate_matches.unwrap(),
+            provider,
+            precision,
+        )?),
+        ("parse", parse_matches) => cmd::parse::run(cmd::parse::ParseRequest::new(
             parse_matches.unwrap(),
             provider,
             precision,
             config.datetime_format(),
-        ),
+        )?),
         _ => panic!("never happen"),
     }
 }
