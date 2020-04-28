@@ -11,7 +11,12 @@ use crate::precision::Precision;
 use crate::provider::DateTimeProvider;
 use crate::read::{read_next, ReadError};
 
-pub fn run<O, Tz, P>(m: &ArgMatches, provider: P, precision: Precision) -> Result<(), UtError>
+pub fn run<O, Tz, P>(
+    m: &ArgMatches,
+    provider: P,
+    precision: Precision,
+    datetime_format: Option<&str>,
+) -> Result<(), UtError>
 where
     O: Offset + Display + Sized,
     Tz: TimeZone<Offset = O> + Debug,
@@ -26,7 +31,8 @@ where
     let precision = maybe_precision.unwrap_or(precision);
 
     let dt = precision.parse_timestamp(provider.timezone(), timestamp);
-    println!("{}", dt.format(precision.preferred_format()).to_string());
+    let format = datetime_format.unwrap_or_else(|| precision.preferred_format());
+    println!("{}", dt.format(format).to_string());
     Ok(())
 }
 

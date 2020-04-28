@@ -4,6 +4,7 @@ use std::env;
 pub struct Config {
     offset: Option<String>,
     precision: Option<String>,
+    datetime_format: Option<String>,
 }
 
 impl Config {
@@ -11,6 +12,7 @@ impl Config {
         Config {
             offset: env::var("UT_OFFSET").ok(),
             precision: env::var("UT_PRECISION").ok(),
+            datetime_format: env::var("UT_DATETIME_FORMAT").ok(),
         }
     }
 
@@ -21,6 +23,10 @@ impl Config {
     pub fn precision(&self) -> Option<&str> {
         self.precision.as_deref()
     }
+
+    pub fn datetime_format(&self) -> Option<&str> {
+        self.datetime_format.as_deref()
+    }
 }
 
 impl Default for Config {
@@ -28,6 +34,7 @@ impl Default for Config {
         Config {
             offset: None,
             precision: None,
+            datetime_format: None,
         }
     }
 }

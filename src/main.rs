@@ -89,16 +89,16 @@ fn run() -> Result<(), UtError> {
 
     if main_matches.is_present("UTC") {
         let provider: UtcProvider = UtcProvider::from_timezone(Utc);
-        run_with(&main_matches, provider, precision)
+        run_with(&main_matches, provider, precision, &config)
     } else if let Some(offset_text) = main_matches.value_of("OFFSET").or_else(|| config.offset()) {
         let offset = Offset::from_str(offset_text)
             .context(UtErrorKind::WrongTimeOffset)?
             .into();
         let provider: FixedOffsetProvider = FixedOffsetProvider::from_timezone(offset);
-        run_with(&main_matches, provider, precision)
+        run_with(&main_matches, provider, precision, &config)
     } else {
         let provider: LocalProvider = LocalProvider::from_timezone(Local);
-        run_with(&main_matches, provider, precision)
+        run_with(&main_matches, provider, precision, &config)
     }
 }
 
@@ -106,6 +106,7 @@ fn run_with<O, Tz, P>(
     main_matches: &ArgMatches,
     provider: P,
     precision: Precision,
+    config: &Config,
 ) -> Result<(), UtError>
 where
     O: chrono::Offset + Display + Sized,
@@ -116,7 +117,12 @@ where
         ("generate", generate_matches) => {
             cmd::generate::run(generate_matches.unwrap(), provider, precision)
         }
-        ("parse", parse_matches) => cmd::parse::run(parse_matches.unwrap(), provider, precision),
+        ("parse", parse_matches) => cmd::parse::run(
+            parse_matches.unwrap(),
+            provider,
+            precision,
+            config.datetime_format(),
+        ),
         _ => panic!("never happen"),
     }
 }
