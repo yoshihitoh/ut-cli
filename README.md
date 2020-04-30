@@ -79,7 +79,7 @@ SUBCOMMANDS:
 You can set options via envrionment variables.
 
 | name               | equiv option   | example 
-|:------------      :|:--------------:|:-----------
+|:------------------:|:--------------:|:-----------
 | UT_OFFSET          | -o/--offset    | 09:00
 | UT_PRECISION       | -p/--precision | millisecond
 | UT_DATETIME_FORMAT | -              | %Y-%m-%d %H:%M
