@@ -1,14 +1,14 @@
 use chrono::{DateTime, TimeZone};
-use failure::Fail;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
+use thiserror::Error;
 
 use crate::find::{FindByName, FindError, PossibleNames, PossibleValues};
 use crate::validate::IntoValidationError;
 
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum PrecisionError {
-    #[fail(display = "Wrong precision. error:{}", _0)]
+    #[error("Wrong precision. error:{0}")]
     WrongName(FindError),
 }
 

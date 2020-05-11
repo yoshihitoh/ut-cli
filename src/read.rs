@@ -1,15 +1,15 @@
 use std::io::{self, Read};
 use std::num::ParseIntError;
+use std::str::FromStr;
 
-use failure::Fail;
-use failure::_core::str::FromStr;
+use thiserror::Error;
 
-#[derive(Fail, Debug)]
+#[derive(Error, Debug)]
 pub enum ReadError {
-    #[fail(display = "IO error. error:{}", _0)]
+    #[error("IO error. error:{0}")]
     Io(io::Error),
 
-    #[fail(display = "Parse int error. error:{}", _0)]
+    #[error("Parse int error. error:{0}")]
     ParseInt(ParseIntError),
 }
 

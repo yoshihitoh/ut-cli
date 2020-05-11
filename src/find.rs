@@ -1,13 +1,13 @@
 use std::str::FromStr;
 
-use failure::Fail;
+use thiserror::Error;
 
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum FindError {
-    #[fail(display = "No matching item found.")]
+    #[error("No matching item found.")]
     NotFound,
 
-    #[fail(display = "Ambiguous item given. candidates: {:?}", _0)]
+    #[error("Ambiguous item given. candidates: {0:?}")]
     Ambiguous(Vec<String>),
 }
 
