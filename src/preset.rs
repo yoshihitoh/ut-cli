@@ -1,17 +1,17 @@
 use std::fmt::Debug;
 
 use chrono::{Date, TimeZone};
-use failure::Fail;
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
+use thiserror::Error;
 
 use crate::find::{FindByName, FindError, PossibleNames, PossibleValues};
 use crate::provider::DateTimeProvider;
 use crate::validate::IntoValidationError;
 
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum PresetError {
-    #[fail(display = "Wrong preset. error:{}", _0)]
+    #[error("Wrong preset. error:{0}")]
     WrongName(FindError),
 }
 

@@ -1,23 +1,20 @@
 use std::str::FromStr;
 
 use chrono::FixedOffset;
-use failure::Fail;
 use regex::{Captures, Regex};
+use thiserror::Error;
 
 use crate::validate::{validate_number, IntoValidationError};
 
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum OffsetError {
-    #[fail(
-        display = "Wrong hms text: '{}'. text must be in `Hmmss` or `HH:mm:ss` format.",
-        _0
-    )]
+    #[error("Wrong hms text: '{0}'. text must be in `Hmmss` or `HH:mm:ss` format.")]
     WrongFormat(String),
 
-    #[fail(display = "Wrong hour: '{}'. hour must be between 0 and 23.", _0)]
+    #[error("Wrong hour: '{0}'. hour must be between 0 and 23.")]
     WrongHour(String),
 
-    #[fail(display = "Wrong minute: '{}'. minute must be between 0 and 59.", _0)]
+    #[error("Wrong minute: '{0}'. minute must be between 0 and 59.")]
     WrongMinute(String),
 }
 

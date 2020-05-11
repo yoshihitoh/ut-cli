@@ -2,13 +2,12 @@ use std::convert::TryFrom;
 use std::fmt::Debug;
 use std::str::FromStr;
 
+use anyhow::Context;
 use chrono::prelude::*;
 use clap::ArgMatches;
-use failure::ResultExt;
 
 use crate::datetime::{Hms, HmsError, Ymd, YmdError};
 use crate::delta::DeltaItem;
-use crate::error::{UtError, UtErrorKind};
 use crate::find::FindByName;
 use crate::parse::parse_argv_opt;
 use crate::precision::Precision;
@@ -32,7 +31,7 @@ impl GenerateOptions {
         &self,
         provider: P,
         precision: Precision,
-    ) -> Result<DateTime<Tz>, UtError>
+    ) -> Result<DateTime<Tz>, Box<dyn std::error::Error>>
     where
         Tz: TimeZone + Debug,
         P: DateTimeProvider<Tz>,
@@ -62,7 +61,7 @@ impl GenerateOptions {
             .fold(base, |dt, unit| unit.truncate(dt)))
     }
 
-    fn base_date<P, Tz>(&self, provider: &P) -> Result<Option<Date<Tz>>, UtError>
+    fn base_date<P, Tz>(&self, provider: &P) -> Result<Option<Date<Tz>>, Box<dyn std::error::Error>>
     where
         Tz: TimeZone + Debug,
         P: DateTimeProvider<Tz>,
@@ -75,36 +74,29 @@ impl GenerateOptions {
                     ymd.into_date(&provider.timezone()).map(Some)
                 })
             })
-            .context(UtErrorKind::WrongDate)?;
+            .context("Wrong date.")?;
 
         Ok(date)
     }
 }
 
 impl TryFrom<&ArgMatches<'_>> for GenerateOptions {
-    type Error = UtError;
+    type Error = Box<dyn std::error::Error>;
 
     fn try_from(m: &ArgMatches<'_>) -> Result<Self, Self::Error> {
-        fn delta_item_from(s: &str) -> Result<DeltaItem, UtError> {
-            Ok(DeltaItem::from_str(s).context(UtErrorKind::DeltaError)?)
+        fn delta_item_from(s: &str) -> Result<DeltaItem, Box<dyn std::error::Error>> {
+            Ok(DeltaItem::from_str(s).context("Delta error.")?)
         }
 
         let timestamp = m
             .value_of("BASE_TIMESTAMP")
-            .map(|s| {
-                i64::from_str(s)
-                    .map(Some)
-                    .context(UtErrorKind::WrongTimestamp)
-            })
+            .map(|s| i64::from_str(s).map(Some).context("Wrong timestamp."))
             .unwrap_or_else(|| Ok(None))?;
-        let preset =
-            Preset::find_by_name_opt(m.value_of("BASE")).context(UtErrorKind::PresetError)?;
-        let ymd =
-            parse_argv_opt::<Ymd, YmdError>(m.value_of("YMD")).context(UtErrorKind::WrongDate)?;
-        let hms =
-            parse_argv_opt::<Hms, HmsError>(m.value_of("HMS")).context(UtErrorKind::WrongTime)?;
-        let truncate = TimeUnit::find_by_name_opt(m.value_of("TRUNCATE"))
-            .context(UtErrorKind::TimeUnitError)?;
+        let preset = Preset::find_by_name_opt(m.value_of("BASE")).context("Preset error.")?;
+        let ymd = parse_argv_opt::<Ymd, YmdError>(m.value_of("YMD")).context("Wrong date.")?;
+        let hms = parse_argv_opt::<Hms, HmsError>(m.value_of("HMS")).context("Wrong time.")?;
+        let truncate =
+            TimeUnit::find_by_name_opt(m.value_of("TRUNCATE")).context("Time unit error.")?;
         let deltas = m
             .values_of("DELTA")
             .map(|values| values.map(delta_item_from).collect())
@@ -135,12 +127,12 @@ where
         m: &ArgMatches,
         provider: P,
         precision: Precision,
-    ) -> Result<GenerateRequest<Tz>, UtError>
+    ) -> Result<GenerateRequest<Tz>, Box<dyn std::error::Error>>
     where
         P: DateTimeProvider<Tz>,
     {
-        let maybe_precision = Precision::find_by_name_opt(m.value_of("PRECISION"))
-            .context(UtErrorKind::PrecisionError)?;
+        let maybe_precision =
+            Precision::find_by_name_opt(m.value_of("PRECISION")).context("Precision error.")?;
         if maybe_precision.is_some() {
             eprintln!("-p PRECISION option is deprecated.");
         }
@@ -157,14 +149,16 @@ where
     }
 }
 
-pub fn run<Tz>(request: GenerateRequest<Tz>) -> Result<(), UtError>
+pub fn run<Tz>(request: GenerateRequest<Tz>) -> Result<(), Box<dyn std::error::Error>>
 where
     Tz: TimeZone + Debug,
 {
     generate(request)
 }
 
-fn generate<Tz: TimeZone>(request: GenerateRequest<Tz>) -> Result<(), UtError> {
+fn generate<Tz: TimeZone>(request: GenerateRequest<Tz>) -> Result<(), Box<dyn std::error::Error>> {
+    use anyhow::anyhow;
+
     let delta = request
         .deltas
         .into_iter()
@@ -176,8 +170,9 @@ fn generate<Tz: TimeZone>(request: GenerateRequest<Tz>) -> Result<(), UtError> {
     match delta.apply_datetime(request.base) {
         Some(dt) => {
             println!("{}", request.precision.to_timestamp(dt));
-            Ok(())
         }
-        None => Err(UtError::from(UtErrorKind::TimeUnitError)),
+        None => Err(anyhow!("Time unit error."))?,
     }
+
+    Ok(())
 }

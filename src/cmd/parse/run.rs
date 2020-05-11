@@ -1,11 +1,10 @@
 use std::fmt::{Debug, Display};
 use std::io;
 
+use anyhow::Context;
 use chrono::{Offset, TimeZone};
 use clap::ArgMatches;
-use failure::ResultExt;
 
-use crate::error::{UtError, UtErrorKind};
 use crate::find::FindByName;
 use crate::precision::Precision;
 use crate::provider::DateTimeProvider;
@@ -25,10 +24,10 @@ impl<P> ParseRequest<P> {
         provider: P,
         precision: Precision,
         datetime_format: Option<&str>,
-    ) -> Result<ParseRequest<P>, UtError> {
+    ) -> Result<ParseRequest<P>, Box<dyn std::error::Error>> {
         let timestamp = get_timestamp(m.value_of("TIMESTAMP"))?;
-        let maybe_precision = Precision::find_by_name_opt(m.value_of("PRECISION"))
-            .context(UtErrorKind::PrecisionError)?;
+        let maybe_precision =
+            Precision::find_by_name_opt(m.value_of("PRECISION")).context("Precision error.")?;
         if maybe_precision.is_some() {
             eprintln!("-p PRECISION option is deprecated.");
         }
@@ -46,7 +45,7 @@ impl<P> ParseRequest<P> {
     }
 }
 
-pub fn run<O, Tz, P>(request: ParseRequest<P>) -> Result<(), UtError>
+pub fn run<O, Tz, P>(request: ParseRequest<P>) -> Result<(), Box<dyn std::error::Error>>
 where
     O: Offset + Display + Sized,
     Tz: TimeZone<Offset = O> + Debug,
@@ -59,12 +58,12 @@ where
     Ok(())
 }
 
-fn get_timestamp(maybe_timestamp: Option<&str>) -> Result<i64, UtError> {
+fn get_timestamp(maybe_timestamp: Option<&str>) -> Result<i64, Box<dyn std::error::Error>> {
     Ok(maybe_timestamp
-        .map(|s| s.parse::<i64>().context(UtErrorKind::WrongTimestamp))
+        .map(|s| s.parse::<i64>().context("Wrong timestamp."))
         .unwrap_or_else(|| {
             let stdin = io::stdin();
             let r: Result<i64, ReadError> = read_next(stdin);
-            r.context(UtErrorKind::WrongTimestamp)
+            r.context("Wrong timestamp.")
         })?)
 }

@@ -1,22 +1,22 @@
 use std::str::FromStr;
 
-use failure::Fail;
 use regex::Regex;
+use thiserror::Error;
 
 use crate::find::FindByName;
 use crate::timedelta::TimeDeltaBuilder;
 use crate::unit::{TimeUnit, TimeUnitError};
 use crate::validate::IntoValidationError;
 
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum DeltaItemError {
-    #[fail(display = "Wrong format. error:{}", _0)]
+    #[error("Wrong format. error:{0}")]
     WrongFormat(String),
 
-    #[fail(display = "Wrong value. error:{}", _0)]
+    #[error("Wrong value. error:{0}")]
     WrongValue(String),
 
-    #[fail(display = "Wrong unit. error:{}", _0)]
+    #[error("Wrong unit. error:{0}")]
     WrongUnit(TimeUnitError),
 }
 

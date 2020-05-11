@@ -2,7 +2,6 @@ mod cmd;
 mod config;
 mod datetime;
 mod delta;
-mod error;
 mod find;
 mod offset;
 mod parse;
@@ -17,15 +16,14 @@ mod validate;
 use std::fmt::{Debug, Display};
 use std::str::FromStr;
 
+use anyhow::Context;
 use chrono::{Local, TimeZone, Utc};
 use clap::{
     crate_authors, crate_description, crate_name, crate_version, App, AppSettings, Arg, ArgMatches,
 };
-use failure::ResultExt;
 
 use crate::cmd::generate::GenerateRequest;
 use crate::config::Config;
-use crate::error::{UtError, UtErrorKind};
 use crate::find::FindByName;
 use crate::offset::{Offset, OffsetError};
 use crate::precision::{Precision, PrecisionError};
@@ -77,7 +75,7 @@ fn config() -> Config {
     Config::from_env()
 }
 
-fn run() -> Result<(), UtError> {
+fn run() -> Result<(), Box<dyn std::error::Error>> {
     let app = app();
     let config = config();
     let main_matches = app.get_matches();
@@ -85,7 +83,7 @@ fn run() -> Result<(), UtError> {
         .value_of("PRECISION")
         .or_else(|| config.precision());
     let precision = Precision::find_by_name_opt(maybe_precision)
-        .context(UtErrorKind::PrecisionError)?
+        .context("Precision error.")?
         .unwrap_or_else(|| Precision::Second);
 
     if main_matches.is_present("UTC") {
@@ -93,7 +91,7 @@ fn run() -> Result<(), UtError> {
         run_with(&main_matches, provider, precision, &config)
     } else if let Some(offset_text) = main_matches.value_of("OFFSET").or_else(|| config.offset()) {
         let offset = Offset::from_str(offset_text)
-            .context(UtErrorKind::WrongTimeOffset)?
+            .context("Wrong time offset.")?
             .into();
         let provider: FixedOffsetProvider = FixedOffsetProvider::from_timezone(offset);
         run_with(&main_matches, provider, precision, &config)
@@ -108,7 +106,7 @@ fn run_with<O, Tz, P>(
     provider: P,
     precision: Precision,
     config: &Config,
-) -> Result<(), UtError>
+) -> Result<(), Box<dyn std::error::Error>>
 where
     O: chrono::Offset + Display + Sized,
     Tz: TimeZone<Offset = O> + Debug,

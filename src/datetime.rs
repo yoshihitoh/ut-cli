@@ -2,40 +2,34 @@ use std::convert::TryInto;
 use std::fmt::Debug;
 use std::str::FromStr;
 
-use failure::Fail;
 use regex::Regex;
+use thiserror::Error;
 
 use crate::parse::extract_number;
 use crate::validate::{validate_number, IntoValidationError};
 use chrono::{Date, LocalResult, NaiveDate, NaiveTime, TimeZone};
 
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum YmdError {
-    #[fail(
-        display = "Wrong ymd text: '{}'. text must be in `yyyyMMdd` or `yyyy-MM-dd` format.",
-        _0
-    )]
+    #[error("Wrong ymd text: '{0}'. text must be in `yyyyMMdd` or `yyyy-MM-dd` format.")]
     WrongFormat(String),
 
-    #[fail(
-        display = "Wrong year: '{}'. year must be between {} and {}.",
-        _0, _1, _2
-    )]
+    #[error("Wrong year: '{0}'. year must be between {1} and {2}.")]
     WrongYear(String, i32, i32),
 
-    #[fail(display = "Wrong month: '{}'. month must be between 1 and 12.", _0)]
+    #[error("Wrong month: '{0}'. month must be between 1 and 12.")]
     WrongMonth(String),
 
-    #[fail(display = "Wrong day: '{}'. day must be between 1 and 31.", _0)]
+    #[error("Wrong day: '{0}'. day must be between 1 and 31.")]
     WrongDay(String),
 
-    #[fail(display = "Wrong date: '{}'.", _0)]
+    #[error("Wrong date: '{0}'.")]
     WrongDate(String),
 }
 
 impl IntoValidationError for YmdError {
     fn into_validation_error(self) -> String {
-        format!("{} cause:{:?}", self, self.cause())
+        format!("{:?}", self)
     }
 }
 
@@ -99,27 +93,24 @@ impl TryInto<NaiveDate> for Ymd {
     }
 }
 
-#[derive(Fail, Debug, PartialEq)]
+#[derive(Error, Debug, PartialEq)]
 pub enum HmsError {
-    #[fail(
-        display = "Wrong hms text: '{}'. text must be in `Hmmss` or `HH:mm:ss` format.",
-        _0
-    )]
+    #[error("Wrong hms text: '{0}'. text must be in `Hmmss` or `HH:mm:ss` format.")]
     WrongFormat(String),
 
-    #[fail(display = "Wrong hour: '{}'. hour must be between 0 and 23.", _0)]
+    #[error("Wrong hour: '{0}'. hour must be between 0 and 23.")]
     WrongHour(String),
 
-    #[fail(display = "Wrong minute: '{}'. minute must be between 0 and 59.", _0)]
+    #[error("Wrong minute: '{0}'. minute must be between 0 and 59.")]
     WrongMinute(String),
 
-    #[fail(display = "Wrong second: '{}'. second must be between 0 and 59.", _0)]
+    #[error("Wrong second: '{0}'. second must be between 0 and 59.")]
     WrongSecond(String),
 }
 
 impl IntoValidationError for HmsError {
     fn into_validation_error(self) -> String {
-        format!("{} cause:{:?}", self, self.cause())
+        format!("{:?}", self)
     }
 }
 
