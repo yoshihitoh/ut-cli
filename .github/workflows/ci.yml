@@ -20,24 +20,24 @@ jobs:
         - win-gnu
         include:
         - build: stable
-          os: ubuntu-18.04
+          os: ubuntu-latest
           rust: stable
         - build: macos
           os: macos-latest
           rust: stable
         - build: win-msvc
-          os: windows-2019
+          os: windows-2022
           rust: stable
         - build: win-gnu
-          os: windows-2019
+          os: windows-2022
           rust: stable-x86_64-gnu
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Install packages (Ubuntu)
-      if: matrix.os == 'ubuntu-18.04'
+      if: matrix.os == 'ubuntu-latest'
       run: |
         ci/github-actions/ubuntu-install-packages
 
@@ -47,11 +47,9 @@ jobs:
         ci/github-actions/macos-install-packages
 
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: ${{ matrix.rust }}
-        profile: minimal
-        override: true
 
     - name: Build
       run: |
@@ -60,17 +58,15 @@ jobs:
 
   rustfmt:
     name: rustfmt
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Install Rust
-      uses: actions-rs/toolchain@v1
+      uses: dtolnay/rust-toolchain@master
       with:
         toolchain: stable
-        override: true
-        profile: minimal
         components: rustfmt
 
     - name: Check formatting
