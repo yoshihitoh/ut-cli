@@ -7,7 +7,7 @@ use thiserror::Error;
 
 use crate::parse::extract_number;
 use crate::validate::{validate_number, IntoValidationError};
-use chrono::{Date, LocalResult, NaiveDate, NaiveTime, TimeZone};
+use chrono::{ DateTime, MappedLocalTime, NaiveDate, NaiveTime, TimeZone};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum YmdError {
@@ -41,22 +41,26 @@ pub struct Ymd {
 }
 
 impl Ymd {
-    pub fn into_date<Tz>(self, tz: &Tz) -> Result<Date<Tz>, YmdError>
+    pub fn into_datetime<Tz>(self, tz: &Tz) -> Result<DateTime<Tz>, YmdError>
     where
         Tz: TimeZone + Debug,
     {
-        self.try_into()
-            .and_then(|date| match tz.from_local_date(&date) {
-                LocalResult::Single(date) => Ok(date),
-                LocalResult::None => Err(YmdError::WrongDate(format!(
-                    "Date does not exist. ymd:{:?}, tz:{:?}",
-                    &self, tz
-                ))),
-                LocalResult::Ambiguous(a, b) => Err(YmdError::WrongDate(format!(
+        let date: NaiveDate = self.try_into()?;
+        match tz.from_local_datetime(&date.and_time(NaiveTime::MIN)) {
+            MappedLocalTime::Single(datetime) => Ok(datetime),
+            MappedLocalTime::Ambiguous(a, b) => Err(YmdError::WrongDate(
+                format!(
                     "Date is ambiguous. A:{:?}, B:{:?}",
                     a, b
-                ))),
-            })
+                )
+            )),
+            MappedLocalTime::None => Err(YmdError::WrongDate(
+                format!(
+                    "Date does not exist. ymd:{:?}, tz:{:?}",
+                    &self, tz
+                )
+            ))
+        }
     }
 }
 
@@ -149,7 +153,7 @@ impl FromStr for Hms {
 
 impl Into<NaiveTime> for Hms {
     fn into(self) -> NaiveTime {
-        NaiveTime::from_hms(self.h, self.m, self.s)
+        NaiveTime::from_hms_opt(self.h, self.m, self.s).expect("Wrong time format")
     }
 }
 
@@ -177,11 +181,11 @@ mod tests {
 
         let r = Ymd::from_str("2020/2/29");
         assert!(r.is_ok());
-        assert!(r.unwrap().into_date(&Local).is_ok());
+        assert!(r.unwrap().into_datetime(&Local).is_ok());
 
         let r = Ymd::from_str("2019/2/29");
         assert!(r.is_ok());
-        assert!(r.unwrap().into_date(&Local).is_err());
+        assert!(r.unwrap().into_datetime(&Local).is_err());
     }
 
     #[test]

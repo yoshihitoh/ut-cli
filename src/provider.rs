@@ -1,6 +1,6 @@
 pub use std::fmt::Debug;
 
-use chrono::{Date, DateTime, TimeZone};
+use chrono::{DateTime, NaiveTime, TimeZone};
 
 use crate::timedelta::{ApplyDateTime, TimeDeltaBuilder};
 
@@ -17,15 +17,15 @@ pub trait DateTimeProvider<Tz: TimeZone + Debug> {
 
     fn now(&self) -> DateTime<Tz>;
 
-    fn today(&self) -> Date<Tz> {
-        self.now().date()
+    fn today(&self) -> DateTime<Tz> {
+        self.now().with_time(NaiveTime::MIN).unwrap()
     }
 
-    fn tomorrow(&self) -> Date<Tz> {
+    fn tomorrow(&self) -> DateTime<Tz> {
         add_days(self.today(), 1)
     }
 
-    fn yesterday(&self) -> Date<Tz> {
+    fn yesterday(&self) -> DateTime<Tz> {
         add_days(self.today(), -1)
     }
 }
@@ -36,10 +36,9 @@ pub trait FromTimeZone<Tz: TimeZone + Debug> {
         Self: DateTimeProvider<Tz>;
 }
 
-fn add_days<Tz: TimeZone>(date: Date<Tz>, days: i32) -> Date<Tz> {
+fn add_days<Tz: TimeZone>(dt: DateTime<Tz>, days: i32) -> DateTime<Tz> {
     let delta = TimeDeltaBuilder::default().days(days).build();
     delta
-        .apply_datetime(date.and_hms(0, 0, 0))
-        .unwrap_or_else(|| panic!("can't add days. date={:?}, days={}", date, days))
-        .date()
+        .apply_datetime(dt.clone())
+        .expect(&format!("can't add days. dt={:?}, days={}", dt, days))
 }

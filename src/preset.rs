@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use chrono::{Date, TimeZone};
+use chrono::{DateTime, TimeZone};
 use strum::IntoEnumIterator;
 use strum_macros::{Display, EnumIter, EnumString};
 use thiserror::Error;
@@ -49,7 +49,7 @@ pub enum Preset {
 }
 
 impl Preset {
-    pub fn as_date<P, Tz>(self, provider: &P) -> Date<Tz>
+    pub fn as_datetime<P, Tz>(self, provider: &P) -> DateTime<Tz>
     where
         P: DateTimeProvider<Tz>,
         Tz: TimeZone + Debug,

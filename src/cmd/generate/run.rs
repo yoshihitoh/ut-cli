@@ -41,18 +41,29 @@ impl GenerateOptions {
             precision.parse_timestamp(provider.timezone(), timestamp)
         } else {
             let now = provider.now();
-            let maybe_date = self.base_date(&provider)?;
+            let maybe_date = self.base_date(&provider)?.map(|dt| dt.date_naive());
             let has_date = maybe_date.is_some();
-            let date = maybe_date.unwrap_or_else(|| now.date());
+            let date = maybe_date.unwrap_or_else(|| now.date_naive());
             let time = self.hms.map(|hms| hms.into()).unwrap_or_else(|| {
                 if has_date {
-                    NaiveTime::from_hms(0, 0, 0)
+                    NaiveTime::from_hms_opt(0, 0, 0).expect("wrong time")
                 } else {
                     now.time()
                 }
             });
 
-            date.and_time(time).unwrap()
+            provider
+                .timezone()
+                .from_local_datetime(&date.and_time(time))
+                .single()
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "cannot convert datetime with the timezone. date:{}, time:{}, tz:{:?}",
+                        date,
+                        time,
+                        provider.timezone()
+                    )
+                })?
         };
 
         Ok(self
@@ -61,17 +72,20 @@ impl GenerateOptions {
             .fold(base, |dt, unit| unit.truncate(dt)))
     }
 
-    fn base_date<P, Tz>(&self, provider: &P) -> Result<Option<Date<Tz>>, Box<dyn std::error::Error>>
+    fn base_date<P, Tz>(
+        &self,
+        provider: &P,
+    ) -> Result<Option<DateTime<Tz>>, Box<dyn std::error::Error>>
     where
         Tz: TimeZone + Debug,
         P: DateTimeProvider<Tz>,
     {
         let date = self
             .preset
-            .map(|p| Ok(Some(p.as_date(provider))))
+            .map(|p| Ok(Some(p.as_datetime(provider))))
             .unwrap_or_else(|| {
                 self.ymd.map_or(Ok(None), |ymd| {
-                    ymd.into_date(&provider.timezone()).map(Some)
+                    ymd.into_datetime(&provider.timezone()).map(Some)
                 })
             })
             .context("Wrong date.")?;

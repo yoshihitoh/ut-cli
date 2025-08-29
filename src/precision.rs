@@ -45,8 +45,14 @@ pub enum Precision {
 impl Precision {
     pub fn parse_timestamp<Tz: TimeZone>(self, tz: Tz, timestamp: i64) -> DateTime<Tz> {
         match self {
-            Precision::Second => tz.timestamp(timestamp, 0),
-            Precision::MilliSecond => tz.timestamp_millis(timestamp),
+            Precision::Second => tz
+                .timestamp_opt(timestamp, 0)
+                .single()
+                .expect("invalid timestamp"),
+            Precision::MilliSecond => tz
+                .timestamp_millis_opt(timestamp)
+                .single()
+                .expect("invalid timestamp"),
         }
     }
 
@@ -82,7 +88,7 @@ impl FindByName for Precision {
 #[cfg(test)]
 mod tests {
     use chrono::offset::TimeZone;
-    use chrono::Utc;
+    use chrono::{Timelike, Utc};
 
     use crate::find::{FindByName, FindError};
     use crate::precision::{Precision, PrecisionError};
@@ -118,26 +124,30 @@ mod tests {
     #[test]
     fn parse_timestamp_second() {
         assert_eq!(
-            Precision::Second.parse_timestamp(Utc, 0),
-            Utc.ymd(1970, 1, 1).and_hms(0, 0, 0)
+            Some(Precision::Second.parse_timestamp(Utc, 0)),
+            Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0).single()
         );
 
         assert_eq!(
-            Precision::Second.parse_timestamp(Utc, 1560762129123),
-            Utc.ymd(51428, 8, 1).and_hms(11, 52, 3)
+            Some(Precision::Second.parse_timestamp(Utc, 1560762129123)),
+            Utc.with_ymd_and_hms(51428, 8, 1, 11, 52, 3).single()
         );
     }
 
     #[test]
     fn parse_timestamp_millisecond() {
         assert_eq!(
-            Precision::MilliSecond.parse_timestamp(Utc, 0),
-            Utc.ymd(1970, 1, 1).and_hms_milli(0, 0, 0, 0)
+            Some(Precision::MilliSecond.parse_timestamp(Utc, 0)),
+            Utc.with_ymd_and_hms(1970, 1, 1, 0, 0, 0)
+                .map(|dt| dt.with_nanosecond(0).unwrap())
+                .single()
         );
 
         assert_eq!(
-            Precision::MilliSecond.parse_timestamp(Utc, 1560762129123),
-            Utc.ymd(2019, 6, 17).and_hms_milli(9, 2, 9, 123)
+            Some(Precision::MilliSecond.parse_timestamp(Utc, 1560762129123)),
+            Utc.with_ymd_and_hms(2019, 6, 17, 9, 2, 9)
+                .map(|dt| dt.with_nanosecond(123_000_000).unwrap())
+                .single()
         );
     }
 }

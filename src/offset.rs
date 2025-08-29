@@ -133,7 +133,8 @@ impl FromStr for Offset {
 
 impl Into<FixedOffset> for Offset {
     fn into(self) -> FixedOffset {
-        FixedOffset::east(self.sign.apply(self.h * 3600 + self.m * 60))
+        FixedOffset::east_opt(self.sign.apply(self.h * 3600 + self.m * 60))
+            .expect("Wrong offset value")
     }
 }
 
@@ -173,11 +174,17 @@ mod tests {
     #[test]
     fn offset_into_fixedoffset() {
         use OffsetSign::*;
-        assert_eq!(FixedOffset::east(9 * 3600), offset(Plus, 9, 0).into());
-        assert_eq!(FixedOffset::east(-10 * 3600), offset(Minus, 10, 0).into());
         assert_eq!(
-            FixedOffset::east(5 * 3600 + 45 * 60),
-            offset(None, 5, 45).into()
+            FixedOffset::east_opt(9 * 3600),
+            Some(offset(Plus, 9, 0).into())
+        );
+        assert_eq!(
+            FixedOffset::east_opt(-10 * 3600),
+            Some(offset(Minus, 10, 0).into())
+        );
+        assert_eq!(
+            FixedOffset::east_opt(5 * 3600 + 45 * 60),
+            Some(offset(None, 5, 45).into())
         );
     }
 

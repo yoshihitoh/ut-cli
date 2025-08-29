@@ -266,9 +266,46 @@ fn div_mod(x: i32, y: i32) -> (i32, i32) {
 #[cfg(test)]
 mod time_delta_tests {
     use chrono::offset::TimeZone;
-    use chrono::Utc;
+    use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 
     use super::{ApplyDateTime, TimeDelta, TimeDeltaBuilder};
+
+    fn naive_date(y: i32, m: u32, d: u32) -> NaiveDate {
+        NaiveDate::from_ymd_opt(y, m, d).unwrap()
+    }
+
+    fn naive_time(h: u32, m: u32, s: u32, us: u32) -> NaiveTime {
+        NaiveTime::from_hms_micro_opt(h, m, s, us).unwrap()
+    }
+
+    fn utc_datetime(naive_date: NaiveDate, naive_time: NaiveTime) -> DateTime<Utc> {
+        Utc.from_utc_datetime(&NaiveDateTime::new(naive_date, naive_time))
+    }
+
+    #[derive(Copy, Clone)]
+    struct UtcBuilder;
+    impl UtcBuilder {
+        fn ymd(self, y: i32, m: u32, d: u32) -> UtcBuilderWithDate {
+            UtcBuilderWithDate {
+                date: naive_date(y, m, d),
+            }
+        }
+    }
+
+    #[derive(Copy, Clone)]
+    struct UtcBuilderWithDate {
+        date: NaiveDate,
+    }
+
+    impl UtcBuilderWithDate {
+        fn and_hms(self, h: u32, m: u32, s: u32) -> DateTime<Utc> {
+            utc_datetime(self.date, naive_time(h, m, s, 0))
+        }
+
+        fn and_hms_micro(self, h: u32, m: u32, s: u32, us: u32) -> DateTime<Utc> {
+            utc_datetime(self.date, naive_time(h, m, s, us))
+        }
+    }
 
     #[test]
     fn time_delta_new_basics() {
@@ -457,7 +494,7 @@ mod time_delta_tests {
 
     #[test]
     fn time_delta_apply_microseconds() {
-        let date = Utc.ymd(1, 1, 1);
+        let date = UtcBuilder.ymd(1, 1, 1);
 
         // plus
         assert_eq!(
@@ -490,22 +527,26 @@ mod time_delta_tests {
                 .microseconds(-1)
                 .build()
                 .apply_datetime(date.and_hms_micro(0, 0, 0, 0)),
-            Some(Utc.ymd(0, 12, 31).and_hms_micro(23, 59, 59, 999_999))
+            Some(UtcBuilder.ymd(0, 12, 31).and_hms_micro(23, 59, 59, 999_999))
         );
 
-        let date = Utc.ymd(0, 1, 1);
+        let date = UtcBuilder.ymd(0, 1, 1);
         assert_eq!(
             TimeDeltaBuilder::default()
                 .microseconds(-1)
                 .build()
                 .apply_datetime(date.and_hms_micro(0, 0, 0, 0)),
-            Some(Utc.ymd(-1, 12, 31).and_hms_micro(23, 59, 59, 999_999))
+            Some(
+                UtcBuilder
+                    .ymd(-1, 12, 31)
+                    .and_hms_micro(23, 59, 59, 999_999)
+            )
         );
     }
 
     #[test]
     fn time_delta_apply_seconds() {
-        let date = Utc.ymd(2019, 6, 12);
+        let date = UtcBuilder.ymd(2019, 6, 12);
 
         // plus
         assert_eq!(
@@ -538,13 +579,13 @@ mod time_delta_tests {
                 .seconds(-1)
                 .build()
                 .apply_datetime(date.and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 6, 11).and_hms(23, 59, 59))
+            Some(UtcBuilder.ymd(2019, 6, 11).and_hms(23, 59, 59))
         );
     }
 
     #[test]
     fn time_delta_apply_minutes() {
-        let date = Utc.ymd(2019, 6, 12);
+        let date = UtcBuilder.ymd(2019, 6, 12);
 
         // plus
         assert_eq!(
@@ -577,13 +618,13 @@ mod time_delta_tests {
                 .minutes(-2)
                 .build()
                 .apply_datetime(date.and_hms(0, 1, 0)),
-            Some(Utc.ymd(2019, 6, 11).and_hms(23, 59, 0))
+            Some(UtcBuilder.ymd(2019, 6, 11).and_hms(23, 59, 0))
         );
     }
 
     #[test]
     fn time_delta_apply_hours() {
-        let date = Utc.ymd(2019, 6, 12);
+        let date = UtcBuilder.ymd(2019, 6, 12);
 
         // plus
         assert_eq!(
@@ -599,7 +640,7 @@ mod time_delta_tests {
                 .hours(2)
                 .build()
                 .apply_datetime(date.and_hms(22, 0, 0)),
-            Some(Utc.ymd(2019, 6, 13).and_hms(0, 0, 0))
+            Some(UtcBuilder.ymd(2019, 6, 13).and_hms(0, 0, 0))
         );
 
         // minus
@@ -616,7 +657,7 @@ mod time_delta_tests {
                 .hours(-2)
                 .build()
                 .apply_datetime(date.and_hms(1, 0, 0)),
-            Some(Utc.ymd(2019, 6, 11).and_hms(23, 0, 0))
+            Some(UtcBuilder.ymd(2019, 6, 11).and_hms(23, 0, 0))
         );
     }
 
@@ -627,24 +668,24 @@ mod time_delta_tests {
             TimeDeltaBuilder::default()
                 .days(28)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 6, 2).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 6, 30).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 6, 2).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2019, 6, 30).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .days(29)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 6, 2).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 7, 1).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 6, 2).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2019, 7, 1).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .days(28)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 2, 1).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 3, 1).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 2, 1).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2019, 3, 1).and_hms(0, 0, 0))
         );
 
         // minus
@@ -652,24 +693,24 @@ mod time_delta_tests {
             TimeDeltaBuilder::default()
                 .days(-1)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 6, 2).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 6, 1).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 6, 2).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2019, 6, 1).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .days(-2)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 6, 2).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 5, 31).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 6, 2).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2019, 5, 31).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .days(-1)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 3, 1).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 2, 28).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 3, 1).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2019, 2, 28).and_hms(0, 0, 0))
         );
     }
 
@@ -680,31 +721,31 @@ mod time_delta_tests {
             TimeDeltaBuilder::default()
                 .months(1)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 11, 1).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 12, 1).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 11, 1).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2019, 12, 1).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .months(2)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 11, 1).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 11, 1).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2020, 1, 1).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .months(2)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 10, 31).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 12, 31).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 10, 31).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2019, 12, 31).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .months(1)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 10, 31).and_hms(0, 0, 0)),
+                .apply_datetime(UtcBuilder.ymd(2019, 10, 31).and_hms(0, 0, 0)),
             None
         );
 
@@ -713,31 +754,31 @@ mod time_delta_tests {
             TimeDeltaBuilder::default()
                 .months(-1)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 2, 1).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2019, 1, 1).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 2, 1).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2019, 1, 1).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .months(-2)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 2, 1).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2018, 12, 1).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 2, 1).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2018, 12, 1).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .months(-1)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 1, 31).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2018, 12, 31).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 1, 31).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2018, 12, 31).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .months(-2)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 1, 31).and_hms(0, 0, 0)),
+                .apply_datetime(UtcBuilder.ymd(2019, 1, 31).and_hms(0, 0, 0)),
             None
         );
     }
@@ -749,15 +790,15 @@ mod time_delta_tests {
             TimeDeltaBuilder::default()
                 .years(1)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 1, 1).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2020, 1, 1).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 1, 1).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2020, 1, 1).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .years(1)
                 .build()
-                .apply_datetime(Utc.ymd(2020, 2, 29).and_hms(0, 0, 0)),
+                .apply_datetime(UtcBuilder.ymd(2020, 2, 29).and_hms(0, 0, 0)),
             None
         );
 
@@ -766,15 +807,15 @@ mod time_delta_tests {
             TimeDeltaBuilder::default()
                 .years(-1)
                 .build()
-                .apply_datetime(Utc.ymd(2019, 1, 1).and_hms(0, 0, 0)),
-            Some(Utc.ymd(2018, 1, 1).and_hms(0, 0, 0))
+                .apply_datetime(UtcBuilder.ymd(2019, 1, 1).and_hms(0, 0, 0)),
+            Some(UtcBuilder.ymd(2018, 1, 1).and_hms(0, 0, 0))
         );
 
         assert_eq!(
             TimeDeltaBuilder::default()
                 .years(-1)
                 .build()
-                .apply_datetime(Utc.ymd(2020, 2, 29).and_hms(0, 0, 0)),
+                .apply_datetime(UtcBuilder.ymd(2020, 2, 29).and_hms(0, 0, 0)),
             None
         );
     }
