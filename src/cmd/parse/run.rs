@@ -54,7 +54,7 @@ where
     let dt = request
         .precision
         .parse_timestamp(request.provider.timezone(), request.timestamp);
-    println!("{}", dt.format(&request.datetime_format).to_string());
+    println!("{}", dt.format(&request.datetime_format));
     Ok(())
 }
 

@@ -11,13 +11,13 @@ use crate::validate::IntoValidationError;
 #[derive(Error, Debug, PartialEq)]
 pub enum DeltaItemError {
     #[error("Wrong format. error:{0}")]
-    WrongFormat(String),
+    Format(String),
 
     #[error("Wrong value. error:{0}")]
-    WrongValue(String),
+    Value(String),
 
     #[error("Wrong unit. error:{0}")]
-    WrongUnit(TimeUnitError),
+    Unit(TimeUnitError),
 }
 
 #[cfg(test)]
@@ -25,7 +25,7 @@ impl DeltaItemError {
     pub fn is_wrong_format(&self) -> bool {
         use DeltaItemError::*;
         match self {
-            WrongFormat(_) => true,
+            Format(_) => true,
             _ => false,
         }
     }
@@ -33,7 +33,7 @@ impl DeltaItemError {
     pub fn is_wrong_value(&self) -> bool {
         use DeltaItemError::*;
         match self {
-            WrongValue(_) => true,
+            Value(_) => true,
             _ => false,
         }
     }
@@ -41,7 +41,7 @@ impl DeltaItemError {
     pub fn is_wrong_unit(&self) -> bool {
         use DeltaItemError::*;
         match self {
-            WrongUnit(_) => true,
+            Unit(_) => true,
             _ => false,
         }
     }
@@ -51,12 +51,12 @@ impl IntoValidationError for DeltaItemError {
     fn into_validation_error(self) -> String {
         use DeltaItemError::*;
         match &self {
-            WrongFormat(_) => format!(
+            Format(_) => format!(
                 "{} DELTA must consist of number and unit. See examples on help.",
                 self
             ),
-            WrongValue(_) => format!("{} DELTA value must be a number.", self),
-            WrongUnit(e) => format!("{} {}", self, e),
+            Value(_) => format!("{} DELTA value must be a number.", self),
+            Unit(e) => format!("{} {}", self, e),
         }
     }
 }
@@ -100,13 +100,13 @@ impl FromStr for DeltaItem {
                     .unwrap()
                     .as_str()
                     .parse::<i32>()
-                    .map_err(|e| DeltaItemError::WrongValue(e.to_string()));
+                    .map_err(|e| DeltaItemError::Value(e.to_string()));
 
                 TimeUnit::find_by_name(caps.get(2).unwrap().as_str())
-                    .map_err(DeltaItemError::WrongUnit)
+                    .map_err(DeltaItemError::Unit)
                     .and_then(|unit| r_value.map(|value| DeltaItem { unit, value }))
             })
-            .unwrap_or_else(|| Err(DeltaItemError::WrongFormat(s.to_string())))
+            .unwrap_or_else(|| Err(DeltaItemError::Format(s.to_string())))
     }
 }
 

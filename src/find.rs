@@ -27,7 +27,7 @@ where
     T: Copy + ToString,
     I: Iterator<Item = T>,
 {
-    let found = find_items(items, &name);
+    let found = find_items(items, name);
     if found.len() == 1 {
         Ok(*found.first().unwrap())
     } else if found.is_empty() {

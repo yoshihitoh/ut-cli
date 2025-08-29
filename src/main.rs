@@ -84,7 +84,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         .or_else(|| config.precision());
     let precision = Precision::find_by_name_opt(maybe_precision)
         .context("Precision error.")?
-        .unwrap_or_else(|| Precision::Second);
+        .unwrap_or(Precision::Second);
 
     if main_matches.is_present("UTC") {
         let provider: UtcProvider = UtcProvider::from_timezone(Utc);

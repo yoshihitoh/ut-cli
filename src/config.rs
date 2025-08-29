@@ -1,6 +1,6 @@
 use std::env;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Config {
     offset: Option<String>,
     precision: Option<String>,
@@ -26,15 +26,5 @@ impl Config {
 
     pub fn datetime_format(&self) -> Option<&str> {
         self.datetime_format.as_deref()
-    }
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            offset: None,
-            precision: None,
-            datetime_format: None,
-        }
     }
 }

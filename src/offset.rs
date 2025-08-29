@@ -9,13 +9,13 @@ use crate::validate::{validate_number, IntoValidationError};
 #[derive(Error, Debug, PartialEq)]
 pub enum OffsetError {
     #[error("Wrong hms text: '{0}'. text must be in `Hmmss` or `HH:mm:ss` format.")]
-    WrongFormat(String),
+    Format(String),
 
     #[error("Wrong hour: '{0}'. hour must be between 0 and 23.")]
-    WrongHour(String),
+    Hour(String),
 
     #[error("Wrong minute: '{0}'. minute must be between 0 and 59.")]
-    WrongMinute(String),
+    Minute(String),
 }
 
 #[cfg(test)]
@@ -23,7 +23,7 @@ impl OffsetError {
     pub fn is_wrong_format(&self) -> bool {
         use OffsetError::*;
         match self {
-            WrongFormat(_) => true,
+            Format(_) => true,
             _ => false,
         }
     }
@@ -31,7 +31,7 @@ impl OffsetError {
     pub fn is_wrong_hour(&self) -> bool {
         use OffsetError::*;
         match self {
-            WrongHour(_) => true,
+            Hour(_) => true,
             _ => false,
         }
     }
@@ -39,7 +39,7 @@ impl OffsetError {
     pub fn is_wrong_minute(&self) -> bool {
         use OffsetError::*;
         match self {
-            WrongMinute(_) => true,
+            Minute(_) => true,
             _ => false,
         }
     }
@@ -101,10 +101,10 @@ impl FromStr for Offset {
                 .map(|s| s.as_str().parse())
                 .unwrap_or_else(|| Ok(0))
                 .map_err(|e| {
-                    OffsetError::WrongHour(format!("Parse error. error:{:?}, text:{}", e, text))
+                    OffsetError::Hour(format!("Parse error. error:{:?}, text:{}", e, text))
                 })?;
             validate_number(h, 0, 23, || {
-                OffsetError::WrongHour(format!("Wrong number. text:{}", text))
+                OffsetError::Hour(format!("Wrong number. text:{}", text))
             })?;
 
             let m = captures
@@ -113,10 +113,10 @@ impl FromStr for Offset {
                 .map(|s| s.as_str().parse())
                 .unwrap_or_else(|| Ok(0))
                 .map_err(|e| {
-                    OffsetError::WrongMinute(format!("Parse error. error:{:?}, text:{}", e, text))
+                    OffsetError::Minute(format!("Parse error. error:{:?}, text:{}", e, text))
                 })?;
             validate_number(m, 0, 59, || {
-                OffsetError::WrongMinute(format!("Wrong number. text:{}", text))
+                OffsetError::Minute(format!("Wrong number. text:{}", text))
             })?;
 
             Ok(Offset { sign, h, m })
@@ -126,14 +126,14 @@ impl FromStr for Offset {
             .expect("wrong regex pattern");
 
         re.captures(text)
-            .ok_or_else(|| OffsetError::WrongFormat(text.to_string()))
+            .ok_or_else(|| OffsetError::Format(text.to_string()))
             .and_then(|captures| offset_from_captures(captures, text))
     }
 }
 
-impl Into<FixedOffset> for Offset {
-    fn into(self) -> FixedOffset {
-        FixedOffset::east_opt(self.sign.apply(self.h * 3600 + self.m * 60))
+impl From<Offset> for FixedOffset {
+    fn from(val: Offset) -> Self {
+        FixedOffset::east_opt(val.sign.apply(val.h * 3600 + val.m * 60))
             .expect("Wrong offset value")
     }
 }

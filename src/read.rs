@@ -1,4 +1,4 @@
-use std::io::{self, Read};
+use std::io::{self, BufReader, Read};
 use std::num::ParseIntError;
 use std::str::FromStr;
 
@@ -31,7 +31,7 @@ where
     T: FromStr<Err = E>,
     E: Into<ReadError>,
 {
-    let s: String = src
+    let s: String = BufReader::new(src)
         .bytes()
         .map(|r| r.map(|b| b as char))
         .skip_while(|r| {

@@ -40,5 +40,5 @@ fn add_days<Tz: TimeZone>(dt: DateTime<Tz>, days: i32) -> DateTime<Tz> {
     let delta = TimeDeltaBuilder::default().days(days).build();
     delta
         .apply_datetime(dt.clone())
-        .expect(&format!("can't add days. dt={:?}, days={}", dt, days))
+        .unwrap_or_else(|| panic!("can't add days. dt={:?}, days={}", dt, days))
 }

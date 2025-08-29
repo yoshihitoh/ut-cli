@@ -7,24 +7,24 @@ use thiserror::Error;
 
 use crate::parse::extract_number;
 use crate::validate::{validate_number, IntoValidationError};
-use chrono::{ DateTime, MappedLocalTime, NaiveDate, NaiveTime, TimeZone};
+use chrono::{DateTime, MappedLocalTime, NaiveDate, NaiveTime, TimeZone};
 
 #[derive(Error, Debug, PartialEq)]
 pub enum YmdError {
     #[error("Wrong ymd text: '{0}'. text must be in `yyyyMMdd` or `yyyy-MM-dd` format.")]
-    WrongFormat(String),
+    Format(String),
 
     #[error("Wrong year: '{0}'. year must be between {1} and {2}.")]
-    WrongYear(String, i32, i32),
+    Year(String, i32, i32),
 
     #[error("Wrong month: '{0}'. month must be between 1 and 12.")]
-    WrongMonth(String),
+    Month(String),
 
     #[error("Wrong day: '{0}'. day must be between 1 and 31.")]
-    WrongDay(String),
+    Day(String),
 
     #[error("Wrong date: '{0}'.")]
-    WrongDate(String),
+    Date(String),
 }
 
 impl IntoValidationError for YmdError {
@@ -48,18 +48,14 @@ impl Ymd {
         let date: NaiveDate = self.try_into()?;
         match tz.from_local_datetime(&date.and_time(NaiveTime::MIN)) {
             MappedLocalTime::Single(datetime) => Ok(datetime),
-            MappedLocalTime::Ambiguous(a, b) => Err(YmdError::WrongDate(
-                format!(
-                    "Date is ambiguous. A:{:?}, B:{:?}",
-                    a, b
-                )
-            )),
-            MappedLocalTime::None => Err(YmdError::WrongDate(
-                format!(
-                    "Date does not exist. ymd:{:?}, tz:{:?}",
-                    &self, tz
-                )
-            ))
+            MappedLocalTime::Ambiguous(a, b) => Err(YmdError::Date(format!(
+                "Date is ambiguous. A:{:?}, B:{:?}",
+                a, b
+            ))),
+            MappedLocalTime::None => Err(YmdError::Date(format!(
+                "Date does not exist. ymd:{:?}, tz:{:?}",
+                &self, tz
+            ))),
         }
     }
 }
@@ -77,14 +73,12 @@ impl FromStr for Ymd {
                 let m = extract_number(capture.get(2).or_else(|| capture.get(5)));
                 let d = extract_number(capture.get(3).or_else(|| capture.get(6)));
 
-                validate_number(y, 1900, 2999, || {
-                    YmdError::WrongYear(s.to_string(), 1900, 2999)
-                })
-                .and_then(|_| validate_number(m, 1, 12, || YmdError::WrongMonth(s.to_string())))
-                .and_then(|_| validate_number(d, 1, 31, || YmdError::WrongDay(s.to_string())))
-                .map(|_| Ymd { y, m, d })
+                validate_number(y, 1900, 2999, || YmdError::Year(s.to_string(), 1900, 2999))
+                    .and_then(|_| validate_number(m, 1, 12, || YmdError::Month(s.to_string())))
+                    .and_then(|_| validate_number(d, 1, 31, || YmdError::Day(s.to_string())))
+                    .map(|_| Ymd { y, m, d })
             })
-            .unwrap_or_else(|| Err(YmdError::WrongFormat(s.to_string())))
+            .unwrap_or_else(|| Err(YmdError::Format(s.to_string())))
     }
 }
 
@@ -93,23 +87,23 @@ impl TryInto<NaiveDate> for Ymd {
 
     fn try_into(self) -> Result<NaiveDate, Self::Error> {
         NaiveDate::from_ymd_opt(self.y, self.m, self.d)
-            .ok_or_else(|| YmdError::WrongDate(format!("Date does not exist. {:?}", self)))
+            .ok_or_else(|| YmdError::Date(format!("Date does not exist. {:?}", self)))
     }
 }
 
 #[derive(Error, Debug, PartialEq)]
 pub enum HmsError {
     #[error("Wrong hms text: '{0}'. text must be in `Hmmss` or `HH:mm:ss` format.")]
-    WrongFormat(String),
+    Format(String),
 
     #[error("Wrong hour: '{0}'. hour must be between 0 and 23.")]
-    WrongHour(String),
+    Hour(String),
 
     #[error("Wrong minute: '{0}'. minute must be between 0 and 59.")]
-    WrongMinute(String),
+    Minute(String),
 
     #[error("Wrong second: '{0}'. second must be between 0 and 59.")]
-    WrongSecond(String),
+    Second(String),
 }
 
 impl IntoValidationError for HmsError {
@@ -138,22 +132,18 @@ impl FromStr for Hms {
                 let m = extract_number(capture.get(2).or_else(|| capture.get(5)));
                 let s = extract_number(capture.get(3).or_else(|| capture.get(6)));
 
-                validate_number(h, 0, 23, || HmsError::WrongHour(text.to_string()))
-                    .and_then(|_| {
-                        validate_number(m, 0, 59, || HmsError::WrongMinute(text.to_string()))
-                    })
-                    .and_then(|_| {
-                        validate_number(s, 0, 59, || HmsError::WrongSecond(text.to_string()))
-                    })
+                validate_number(h, 0, 23, || HmsError::Hour(text.to_string()))
+                    .and_then(|_| validate_number(m, 0, 59, || HmsError::Minute(text.to_string())))
+                    .and_then(|_| validate_number(s, 0, 59, || HmsError::Second(text.to_string())))
                     .map(|_| Hms { h, m, s })
             })
-            .unwrap_or_else(|| Err(HmsError::WrongFormat(text.to_string())))
+            .unwrap_or_else(|| Err(HmsError::Format(text.to_string())))
     }
 }
 
-impl Into<NaiveTime> for Hms {
-    fn into(self) -> NaiveTime {
-        NaiveTime::from_hms_opt(self.h, self.m, self.s).expect("Wrong time format")
+impl From<Hms> for NaiveTime {
+    fn from(val: Hms) -> Self {
+        NaiveTime::from_hms_opt(val.h, val.m, val.s).expect("Wrong time format")
     }
 }
 
