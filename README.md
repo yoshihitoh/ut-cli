@@ -7,7 +7,7 @@ ut is a command line tool to handle a unix timestamp.
 ![ci](https://github.com/yoshihitoh/ut-cli/workflows/ci/badge.svg)
 ![Dependabot](https://api.dependabot.com/badges/status?host=github&repo=yoshihitoh/ut-cli)
 
-### Motivation
+## Motivation
 There is a number of times to generate/parse unix timestamps.
 I think `date` command exists to handle these situations. But there are a few problems that they are small, but vital for me.
 - cannot use same options between macOS and Linux.
@@ -30,7 +30,7 @@ $ aws logs filter-log-events \
     --end-time $(ut -p ms g -b today)
 ```
 
-### Installation
+## Installation
 
 If you have rust toolchain, ut-cli can be installed with cargo.
 ``` bash
@@ -44,15 +44,15 @@ $ git clone https://github.com/yoshihitoh/ut-cli
 $ cd ut-cli
 $ cargo build --release
 $ ./target/release/ut --version
-ut 0.1.7
+ut 0.2.0
 ```
 
 Also there are pre-built binary for Linux, macOS and Windows.
 See [releases](https://github.com/yoshihitoh/ut-cli/releases).
 
-### Usage
+## Usage
 ``` bash
-ut-cli 0.1.7
+ut-cli 0.2.0
 yoshihitoh <yoshihito.arih@gmail.com>
 A command line tool to handle unix timestamp.
 
@@ -84,9 +84,43 @@ You can set options via envrionment variables.
 | UT_PRECISION       | -p/--precision | millisecond
 | UT_DATETIME_FORMAT | -              | %Y-%m-%d %H:%M
 
+### UT_OFFSET
+You can specify the offset in `(SIGN)HH:MM` format.
+
+
+```bash
+# JST (UTC+9)
+export UT_OFFSET="+09:00"
+
+# PST (UTC-8)
+export UT_OFFSET="-08:00"
+```
+
+### UT_PRECISION
+You can specify the value using either unit-name, shortest-name, full-name.
+
+| precision     | unit-name | shortest-name | full-name
+|:--------------|:---------:|:-------------:|:-----------
+| Second        | s         | s             | second
+| MilliSecond   | ms        | mil           | millisecond
+| MicroSecond   | us        | mic           | microsecond
+| NanoSecond    | ns        | n             | nanosecond
+
+```bash
+# set milli seconds by default
+export UT_PRECISION=ms
+
+# set nano seconds by default
+export UT_PRECISION=ns
+```
+
+### UT_DATETIME_FORMAT
 UT_DATETIME_FORMAT follows chrono's datetime specifiers.
 See [the document](https://docs.rs/chrono/0.4.11/chrono/format/strftime/index.html) for details.
 
+
+## Examples
+### Basics
 ```bash
 # Set variables.
 $ export UT_OFFSET='09:00'  # Use JST(+9).
@@ -112,12 +146,11 @@ is equivalent to
 $ ut -o '09:00' -p millisecond p $(ut -o '09:00' -p millisecond g)
 ```
 
-
 There are two subcommands available for now.
 - [generate(g)](#generate-a-unix-timestamp)
 - [parse(p)](#parse-a-unix-timestamp)
 
-#### Generate a unix timestamp
+### Generate a unix timestamp
 
 Generate a unix timestamp of the midnight of today.
 ``` bash
@@ -144,7 +177,7 @@ $ ut g -d 1min 1561174200
 1561174260    # 1min(=60second) difference.
 ```
 
-#### Parse a unix timestamp
+### Parse a unix timestamp
 
 Parse a unix timestamp and print it in human readable format.
 ``` bash
@@ -156,7 +189,7 @@ $ ut -p ms p $(ut -p ms g -b today -d 11h -d 22min -d 33s -d 444ms)
 2019-06-19 11:22:33.444 (+09:00)
 ```
 
-#### Change timezone
+### Change timezone
 
 ##### Local timezone
 If you don't set timezone options, ut command uses local timezone.

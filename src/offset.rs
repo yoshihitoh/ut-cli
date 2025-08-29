@@ -154,7 +154,9 @@ mod tests {
         use OffsetSign::*;
         assert_eq!(Offset::from_str("0"), Ok(offset(None, 0, 0)));
         assert_eq!(Offset::from_str("+9"), Ok(offset(Plus, 9, 0)));
+        assert_eq!(Offset::from_str("+09:00"), Ok(offset(Plus, 9, 0)));
         assert_eq!(Offset::from_str("-10"), Ok(offset(Minus, 10, 0)));
+        assert_eq!(Offset::from_str("-10:00"), Ok(offset(Minus, 10, 0)));
         assert_eq!(Offset::from_str("00:00"), Ok(offset(None, 0, 0)));
         assert_eq!(Offset::from_str("00:00"), Ok(offset(None, 0, 0)));
 
